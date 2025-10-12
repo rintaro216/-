@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-bg-light text-gray-800 font-sans;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-orange text-white px-6 py-3 rounded-lg
+           font-medium hover:bg-orange-600 transition-colors
+           active:scale-95 transform duration-150;
+  }
+
+  .btn-secondary {
+    @apply bg-primary-green text-white px-6 py-3 rounded-lg
+           font-medium hover:bg-green-600 transition-colors
+           active:scale-95 transform duration-150;
+  }
+
+  .card {
+    @apply bg-white rounded-lg shadow-md p-6
+           hover:shadow-lg transition-shadow duration-300;
+  }
+
+  .container-custom {
+    @apply container mx-auto px-4;
+  }
+}
