@@ -2,91 +2,155 @@
 
 > あなたの音楽の時間を、もっと自由に
 
-音楽スタジオの予約システム「おんぷタイム」のプロトタイプ版です。
+音楽スタジオの予約システム「おんぷタイム」- **本番稼働中！** 🚀
 
 ## 🎵 プロジェクト概要
 
-おんぷ館のスタジオをオンラインで簡単に予約できるWebアプリケーションです。
+おんぷ館・みどり楽器のスタジオをオンラインで簡単に予約できるWebアプリケーションです。
 
 ### 主な機能
 
 - **お知らせスライドショー**: イベント・発表会情報を魅力的に表示
-- **スタジオ予約**: 2つのエリア（おんぷ館・みどり楽器）から選択
-- **レスポンシブデザイン**: スマホ・タブレット・PCに対応
+- **スタジオ予約**: 2つのエリア（おんぷ館・みどり楽器）、10スタジオから選択
+- **リアルタイム空室管理**: 予約状況をリアルタイムで表示
+- **当日予約制限**: 当日は電話対応（システムで自動制限）
+- **レスポンシブデザイン**: スマホ・タブレット・PCに完全対応
 - **利用者区分**: 一般・生徒で異なる料金設定
 
 ## 🚀 開発状況
 
-現在：**Phase 1（プロトタイプ版）** ✅ 完了
+現在：**Phase 2 完全稼働中** 🚀
 
-### 完成した機能
+### ✅ Phase 1（プロトタイプ版）完了
 
 - ✅ プロジェクトセットアップ
 - ✅ デザインシステム（Tailwind CSS）
 - ✅ ヘッダー・フッター
 - ✅ お知らせスライドショー
-- ✅ トップページ
+- ✅ 全予約フロー画面（8ページ）
 - ✅ スタジオ情報表示
 
-### 次のステップ（Phase 2）
+### ✅ Phase 2（本番機能）完了
 
-- [ ] 予約フロー画面（エリア選択、日時選択、etc.）
-- [ ] Supabase連携
-- [ ] 実際の予約機能実装
-- [ ] メール通知
+- ✅ Supabase完全統合（PostgreSQL）
+- ✅ 実際の予約機能（データベース保存）
+- ✅ リアルタイム空室状況取得
+- ✅ 予約競合防止（自動ブロック）
+- ✅ 当日予約制限機能
+- ✅ ローディング＆エラーハンドリング
+- ✅ Row Level Security (RLS) 設定
+
+### 🔜 Phase 3（拡張機能）検討中
+
+- [ ] 管理画面（予約管理・スタジオ管理）
+- [ ] メール通知機能
+- [ ] 予約統計・レポート
 
 ## 💻 技術スタック
 
-- **フロントエンド**: React 18 + Vite
-- **スタイリング**: Tailwind CSS
-- **ルーティング**: React Router
-- **UI**: Swiper（スライドショー）、React Icons
-- **日付処理**: date-fns
+### フロントエンド
+- **React** 19.1.1
+- **React Router** 6.28.0
+- **Tailwind CSS** 3.4.15
+- **Framer Motion** 11.15.0（アニメーション）
+- **date-fns** 4.1.0（日付処理）
+- **Swiper** 11.1.1（スライドショー）
+- **React Icons** 5.4.0
 
-## 🛠️ 開発環境
+### バックエンド
+- **Supabase** (PostgreSQL + Auth + Storage)
+- **@supabase/supabase-js** 2.75.0
 
-### 必要な環境
+### 開発環境
+- **Vite** 7.1.7
+- **Node.js** 18+
+- **npm** 10+
+
+## 🛠️ セットアップ手順
+
+### 1. 必要な環境
 
 - Node.js 18以上
-- npm または yarn
+- npm 10以上
+- Supabaseアカウント
 
-### セットアップ
+### 2. プロジェクトのクローン
 
 ```bash
-# 依存パッケージのインストール
+git clone https://github.com/your-username/onpu-time.git
+cd onpu-time
+```
+
+### 3. 依存パッケージのインストール
+
+```bash
 npm install
+```
 
-# 開発サーバーの起動
+### 4. Supabase設定
+
+1. [Supabase](https://supabase.com) でプロジェクトを作成
+2. `SUPABASE_SCHEMA.md` のSQLを実行してテーブルを作成
+3. `.env.local` ファイルを作成：
+
+```bash
+VITE_SUPABASE_URL=https://xxxxx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJI...
+```
+
+### 5. 開発サーバーの起動
+
+```bash
 npm run dev
-
-# ビルド
-npm run build
-
-# プレビュー
-npm run preview
 ```
 
 開発サーバーは `http://localhost:5173` で起動します。
+
+### 6. ビルド＆デプロイ
+
+```bash
+# プロダクションビルド
+npm run build
+
+# ローカルでプレビュー
+npm run preview
+```
+
+詳しいデプロイ手順は `DEPLOYMENT.md` を参照してください。
 
 ## 📁 プロジェクト構造
 
 ```
 onpu-time/
 ├── src/
-│   ├── components/     # 共通コンポーネント
+│   ├── components/          # 共通コンポーネント
 │   │   ├── Header.jsx
 │   │   ├── Footer.jsx
 │   │   └── NewsSlider.jsx
-│   ├── pages/         # ページコンポーネント
-│   │   └── Home.jsx
-│   ├── data/          # ダミーデータ
+│   ├── pages/              # ページコンポーネント（8ページ）
+│   │   ├── Home.jsx
+│   │   ├── AreaSelect.jsx
+│   │   ├── DateSelect.jsx
+│   │   ├── StudioSelect.jsx
+│   │   ├── UserTypeSelect.jsx
+│   │   ├── ReservationForm.jsx
+│   │   └── ReservationComplete.jsx
+│   ├── services/           # ビジネスロジック
+│   │   └── reservationService.js
+│   ├── lib/                # ライブラリ設定
+│   │   └── supabase.js
+│   ├── data/               # 静的データ
 │   │   ├── newsData.js
 │   │   └── studioData.js
-│   ├── index.css      # グローバルスタイル
+│   ├── index.css
 │   ├── App.jsx
 │   └── main.jsx
 ├── public/
-├── DESIGN.md          # 詳細設計書
+├── DESIGN.md               # 詳細設計書
+├── SUPABASE_SCHEMA.md      # データベース設計書
+├── PROGRESS.md             # 開発進捗レポート
+├── DEPLOYMENT.md           # デプロイガイド
+├── .env.example            # 環境変数テンプレート
 └── package.json
 ```
 
@@ -105,9 +169,14 @@ onpu-time/
 
 - Noto Sans JP（Google Fonts）
 
-## 📝 開発ドキュメント
+## 📝 ドキュメント
 
-詳細な設計書は `DESIGN.md` を参照してください。
+プロジェクトには以下のドキュメントが用意されています：
+
+- **[DESIGN.md](./DESIGN.md)**: 詳細設計書（UI/UX、機能仕様）
+- **[SUPABASE_SCHEMA.md](./SUPABASE_SCHEMA.md)**: データベース設計書
+- **[PROGRESS.md](./PROGRESS.md)**: 開発進捗レポート
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)**: デプロイガイド
 
 ## 🏢 施設情報
 

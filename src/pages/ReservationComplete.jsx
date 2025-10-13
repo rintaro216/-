@@ -1,7 +1,7 @@
 import { useSearchParams, Link } from 'react-router-dom';
 import { studioData } from '../data/studioData';
 import { format } from 'date-fns';
-import { ja } from 'date-fns/locale';
+import { ja } from 'date-fns/locale/ja';
 import { FaCheckCircle, FaHome, FaCalendarPlus } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 

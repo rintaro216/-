@@ -3,7 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import { studioData } from '../data/studioData';
 import { format } from 'date-fns';
-import { ja } from 'date-fns/locale';
+import { ja } from 'date-fns/locale/ja';
+import { createReservation } from '../services/reservationService';
 
 export default function ReservationForm() {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ export default function ReservationForm() {
   });
 
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // スタジオ情報を取得
   const areaData = studioData[area];
@@ -51,14 +53,42 @@ export default function ReservationForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (validate()) {
-      // Phase 1ではダミー予約番号を生成
-      const reservationId = `OP-${format(new Date(), 'yyyyMMdd')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+    if (!validate()) return;
 
-      navigate(`/reserve/complete?reservationId=${reservationId}&area=${area}&date=${date}&time=${time}&studio=${studioId}&userType=${userType}&price=${price}&name=${encodeURIComponent(formData.name)}`);
+    setIsSubmitting(true);
+
+    try {
+      // 予約データを作成
+      const reservationData = {
+        area,
+        studioId,
+        date,
+        timeRange: time,
+        userType,
+        customerName: formData.name,
+        customerPhone: formData.phone,
+        customerEmail: formData.email,
+        price
+      };
+
+      // 予約を保存
+      const result = await createReservation(reservationData);
+
+      if (result.success) {
+        // 予約完了ページに遷移
+        navigate(`/reserve/complete?reservationId=${result.reservationNumber}&area=${area}&date=${date}&time=${time}&studio=${studioId}&userType=${userType}&price=${price}&name=${encodeURIComponent(formData.name)}`);
+      } else {
+        // エラー処理
+        setErrors({ submit: result.message || '予約の作成に失敗しました' });
+      }
+    } catch (error) {
+      console.error('予約作成エラー:', error);
+      setErrors({ submit: '予約の作成中にエラーが発生しました' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -208,14 +238,33 @@ export default function ReservationForm() {
               <p className="text-red-500 text-sm mt-1">{errors.agreedToTerms}</p>
             )}
           </div>
+
+          {/* 送信エラーメッセージ */}
+          {errors.submit && (
+            <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+              <p className="text-red-600 font-bold">{errors.submit}</p>
+            </div>
+          )}
         </div>
 
         {/* 送信ボタン */}
         <button
           type="submit"
-          className="btn-primary w-full text-lg py-4 mt-8"
+          disabled={isSubmitting}
+          className={`w-full text-lg py-4 mt-8 rounded-lg font-bold transition ${
+            isSubmitting
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'btn-primary'
+          }`}
         >
-          予約を確定する
+          {isSubmitting ? (
+            <span className="flex items-center justify-center">
+              <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></span>
+              予約処理中...
+            </span>
+          ) : (
+            '予約を確定する'
+          )}
         </button>
       </form>
     </div>

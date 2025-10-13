@@ -1,6 +1,7 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import Header from './components/Header'
 import Footer from './components/Footer'
+import ProtectedRoute from './components/ProtectedRoute'
 import Home from './pages/Home'
 import AreaSelect from './pages/AreaSelect'
 import DateSelect from './pages/DateSelect'
@@ -8,11 +9,18 @@ import StudioSelect from './pages/StudioSelect'
 import UserTypeSelect from './pages/UserTypeSelect'
 import ReservationForm from './pages/ReservationForm'
 import ReservationComplete from './pages/ReservationComplete'
+import AdminLogin from './pages/admin/AdminLogin'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import ReservationManagement from './pages/admin/ReservationManagement'
+import StudioManagement from './pages/admin/StudioManagement'
 
 function App() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      {!isAdminRoute && <Header />}
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -25,9 +33,36 @@ function App() {
           <Route path="/reserve/user-type" element={<UserTypeSelect />} />
           <Route path="/reserve/form" element={<ReservationForm />} />
           <Route path="/reserve/complete" element={<ReservationComplete />} />
+
+          {/* 管理画面 */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/reservations"
+            element={
+              <ProtectedRoute>
+                <ReservationManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/studios"
+            element={
+              <ProtectedRoute>
+                <StudioManagement />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </main>
-      <Footer />
+      {!isAdminRoute && <Footer />}
     </div>
   )
 }

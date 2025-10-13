@@ -1,35 +1,59 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, isBefore, startOfToday } from 'date-fns';
-import { ja } from 'date-fns/locale';
+import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, isBefore, startOfToday, addMonths, subMonths } from 'date-fns';
+import { ja } from 'date-fns/locale/ja';
 import { FaArrowLeft, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { getAvailabilityByDate } from '../services/reservationService';
 
 export default function DateSelect() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const area = searchParams.get('area');
 
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  // 初期選択日を明日に設定（当日予約は不可のため）
+  const tomorrow = addDays(new Date(), 1);
+  const [selectedDate, setSelectedDate] = useState(tomorrow);
   const [selectedTime, setSelectedTime] = useState(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [timeSlots, setTimeSlots] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // カレンダー生成（今月のみ表示）
-  const monthStart = startOfMonth(new Date());
-  const monthEnd = endOfMonth(new Date());
+  // カレンダー生成
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
   const today = startOfToday();
 
-  // 時間帯データ（ダミー）- イオンシネマ風
-  const timeSlots = [
-    { time: '10:00-11:00', available: 7, status: 'available' },
-    { time: '11:00-12:00', available: 5, status: 'available' },
-    { time: '13:00-14:00', available: 6, status: 'available' },
-    { time: '14:00-15:00', available: 2, status: 'limited' },
-    { time: '15:00-16:00', available: 0, status: 'occupied' },
-    { time: '16:00-17:00', available: 4, status: 'available' },
-    { time: '17:00-18:00', available: 3, status: 'available' },
-    { time: '18:00-19:00', available: 4, status: 'available' },
-    { time: '19:00-20:00', available: 6, status: 'available' },
-  ];
+  // 月の切り替え
+  const handlePrevMonth = () => {
+    setCurrentMonth(prev => subMonths(prev, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonth(prev => addMonths(prev, 1));
+  };
+
+  // 日付が変更された時に空室状況を取得
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      if (!area) return;
+
+      setIsLoading(true);
+      try {
+        const dateStr = format(selectedDate, 'yyyy-MM-dd');
+        const availability = await getAvailabilityByDate(area, dateStr);
+        setTimeSlots(availability);
+      } catch (error) {
+        console.error('空室状況の取得エラー:', error);
+        // エラー時は空配列を設定
+        setTimeSlots([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAvailability();
+  }, [selectedDate, area]);
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -68,6 +92,11 @@ export default function DateSelect() {
     return isBefore(date, today);
   };
 
+  // 当日かどうかをチェック（当日は予約不可）
+  const isTodayDate = (date) => {
+    return isSameDay(date, today);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
       <button
@@ -85,17 +114,33 @@ export default function DateSelect() {
         ご希望の日付と時間を選択してください
       </p>
 
+      {/* 当日予約の注意書き */}
+      <div className="mb-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+        <p className="text-sm md:text-base text-blue-800">
+          <span className="font-bold">📞 当日予約について：</span>
+          当日のご予約はお電話にてお願いいたします。
+        </p>
+      </div>
+
       {/* カレンダー */}
       <div className="card mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">
-            📅 {format(new Date(), 'yyyy年MM月', { locale: ja })}
+            📅 {format(currentMonth, 'yyyy年MM月', { locale: ja })}
           </h2>
           <div className="flex space-x-2">
-            <button className="p-2 rounded hover:bg-gray-100 transition">
+            <button
+              onClick={handlePrevMonth}
+              className="p-2 rounded hover:bg-gray-100 transition"
+              aria-label="前の月"
+            >
               <FaChevronLeft />
             </button>
-            <button className="p-2 rounded hover:bg-gray-100 transition">
+            <button
+              onClick={handleNextMonth}
+              className="p-2 rounded hover:bg-gray-100 transition"
+              aria-label="次の月"
+            >
               <FaChevronRight />
             </button>
           </div>
@@ -114,23 +159,25 @@ export default function DateSelect() {
             const isPast = isPastDate(day);
             const isSelected = isSameDay(day, selectedDate);
             const isCurrentDay = isToday(day);
+            const isTodayDisabled = isTodayDate(day); // 当日は選択不可
 
             return (
               <button
                 key={day.toString()}
-                onClick={() => !isPast && setSelectedDate(day)}
-                disabled={isPast}
+                onClick={() => !isPast && !isTodayDisabled && setSelectedDate(day)}
+                disabled={isPast || isTodayDisabled}
                 className={`
                   p-2 md:p-3 rounded-lg text-center transition text-sm md:text-base
-                  ${isPast
+                  ${isPast || isTodayDisabled
                     ? 'text-gray-300 cursor-not-allowed'
                     : isSelected
                     ? 'bg-status-selected text-white font-bold shadow-lg scale-105'
                     : isCurrentDay
-                    ? 'bg-blue-100 hover:bg-blue-200 font-bold'
+                    ? 'bg-gray-200 font-bold'
                     : 'hover:bg-gray-100'
                   }
                 `}
+                title={isTodayDisabled ? '当日予約はお電話でお願いします' : ''}
               >
                 {format(day, 'd')}
               </button>
@@ -161,33 +208,40 @@ export default function DateSelect() {
           </div>
         </div>
 
-        <div className="space-y-3">
-          {timeSlots.map((slot) => (
-            <button
-              key={slot.time}
-              onClick={() => slot.status !== 'occupied' && setSelectedTime(slot.time)}
-              disabled={slot.status === 'occupied'}
-              className={`
-                w-full p-4 rounded-lg border-2 text-left transition
-                flex items-center justify-between
-                ${selectedTime === slot.time
-                  ? 'border-status-selected bg-yellow-50 shadow-md scale-105'
-                  : getStatusBg(slot.status) + ' border-2'
-                }
-              `}
-            >
-              <div className="flex items-center space-x-4">
-                <span className={`text-2xl font-bold ${getStatusColor(slot.status)}`}>
-                  {getStatusIcon(slot.status)}
+        {/* ローディング表示 */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-green"></div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {timeSlots.map((slot) => (
+              <button
+                key={slot.time}
+                onClick={() => slot.status !== 'occupied' && setSelectedTime(slot.time)}
+                disabled={slot.status === 'occupied'}
+                className={`
+                  w-full p-4 rounded-lg border-2 text-left transition
+                  flex items-center justify-between
+                  ${selectedTime === slot.time
+                    ? 'border-status-selected bg-yellow-50 shadow-md scale-105'
+                    : getStatusBg(slot.status) + ' border-2'
+                  }
+                `}
+              >
+                <div className="flex items-center space-x-4">
+                  <span className={`text-2xl font-bold ${getStatusColor(slot.status)}`}>
+                    {getStatusIcon(slot.status)}
+                  </span>
+                  <span className="text-base md:text-lg font-medium">{slot.time}</span>
+                </div>
+                <span className="text-sm text-gray-500">
+                  {slot.status === 'occupied' ? '満室' : `空室${slot.available}`}
                 </span>
-                <span className="text-base md:text-lg font-medium">{slot.time}</span>
-              </div>
-              <span className="text-sm text-gray-500">
-                {slot.status === 'occupied' ? '満室' : `空室${slot.available}`}
-              </span>
-            </button>
-          ))}
-        </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 次へボタン */}
