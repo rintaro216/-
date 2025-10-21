@@ -10,8 +10,8 @@ export const studioData = {
         equipment: ["グランドピアノ（ヤマハC3X）", "椅子", "譜面台"],
         capacity: 2,
         pricing: {
-          general: 1600,    // 一般
-          student: 1100     // 生徒
+          general: 800,    // 一般（30分単位）
+          student: 550     // 生徒（30分単位）
         },
         features: ["防音", "空調", "グランドピアノ"]
       },
@@ -22,8 +22,8 @@ export const studioData = {
         equipment: ["アップライトピアノ", "椅子", "譜面台"],
         capacity: 2,
         pricing: {
-          general: 1100,
-          student: 660
+          general: 550,
+          student: 330
         },
         features: ["防音", "空調"]
       },
@@ -34,8 +34,8 @@ export const studioData = {
         equipment: ["防音室", "譜面台", "椅子"],
         capacity: 3,
         pricing: {
-          general: 1100,
-          student: 660
+          general: 550,
+          student: 330
         },
         features: ["防音", "楽器持込可"]
       },
@@ -45,7 +45,7 @@ export const studioData = {
         icon: "🎵",
         equipment: ["防音室", "譜面台", "椅子"],
         capacity: 3,
-        pricing: { general: 1100, student: 660 },
+        pricing: { general: 550, student: 330 },
         features: ["防音", "楽器持込可"]
       },
       {
@@ -54,7 +54,7 @@ export const studioData = {
         icon: "🎵",
         equipment: ["防音室", "譜面台", "椅子"],
         capacity: 3,
-        pricing: { general: 1100, student: 660 },
+        pricing: { general: 550, student: 330 },
         features: ["防音", "楽器持込可"]
       },
       {
@@ -63,7 +63,7 @@ export const studioData = {
         icon: "🎵",
         equipment: ["防音室", "譜面台", "椅子"],
         capacity: 3,
-        pricing: { general: 1100, student: 660 },
+        pricing: { general: 550, student: 330 },
         features: ["防音", "楽器持込可"]
       },
       {
@@ -72,7 +72,7 @@ export const studioData = {
         icon: "🎵",
         equipment: ["防音室", "譜面台", "椅子"],
         capacity: 3,
-        pricing: { general: 1100, student: 660 },
+        pricing: { general: 550, student: 330 },
         features: ["防音", "楽器持込可"]
       }
     ]
@@ -88,8 +88,8 @@ export const studioData = {
         equipment: ["Pearl ドラムセット", "シンバル各種", "ツインペダル"],
         capacity: 2,
         pricing: {
-          general: 1000,
-          student: 700
+          general: 500,
+          student: 350
         },
         features: ["防音", "空調", "スティック貸出"]
       },
@@ -100,8 +100,8 @@ export const studioData = {
         equipment: ["YAMAHA ドラムセット", "電子ドラム（練習用）"],
         capacity: 2,
         pricing: {
-          general: 1000,
-          student: 700
+          general: 500,
+          student: 350
         },
         features: ["防音", "空調", "静音練習可"]
       },
@@ -112,8 +112,8 @@ export const studioData = {
         equipment: ["Marshall アンプ", "BOSS エフェクター", "シールド"],
         capacity: 3,
         pricing: {
-          general: 1100,
-          student: 660
+          general: 550,
+          student: 330
         },
         features: ["防音", "空調", "機材レンタル"]
       }

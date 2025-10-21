@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { FaArrowLeft, FaUser, FaUserGraduate } from 'react-icons/fa';
 import { studioData } from '../data/studioData';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale/ja';
+import { calculateSlots, calculateMinutes } from '../utils/timeUtils';
 
 export default function UserTypeSelect() {
   const navigate = useNavigate();
@@ -15,9 +16,19 @@ export default function UserTypeSelect() {
 
   const [selectedType, setSelectedType] = useState(null);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // スタジオ情報を取得
   const areaData = studioData[area];
   const studio = areaData?.studios.find(s => s.id === studioId);
+
+  // コマ数と料金を計算
+  const slots = calculateSlots(time);
+  const minutes = calculateMinutes(time);
+  const totalPriceGeneral = studio?.pricing.general * slots;
+  const totalPriceStudent = studio?.pricing.student * slots;
 
   if (!studio) {
     return <div>スタジオが見つかりません</div>;
@@ -81,7 +92,10 @@ export default function UserTypeSelect() {
             <div className="flex-grow">
               <h2 className="text-xl md:text-2xl font-bold mb-2">一般のお客様</h2>
               <p className="text-2xl md:text-3xl font-bold text-primary-orange">
-                {studio.pricing.general.toLocaleString()}円 / 1時間
+                {totalPriceGeneral.toLocaleString()}円
+              </p>
+              <p className="text-sm text-gray-600 mt-1">
+                {studio.pricing.general.toLocaleString()}円/30分 × {slots}コマ（{minutes}分）
               </p>
             </div>
 
@@ -115,9 +129,12 @@ export default function UserTypeSelect() {
             <div className="flex-grow">
               <h2 className="text-xl md:text-2xl font-bold mb-2">生徒さん</h2>
               <p className="text-2xl md:text-3xl font-bold text-primary-green">
-                {studio.pricing.student.toLocaleString()}円 / 1時間
+                {totalPriceStudent.toLocaleString()}円
               </p>
               <p className="text-sm text-gray-600 mt-1">
+                {studio.pricing.student.toLocaleString()}円/30分 × {slots}コマ（{minutes}分）
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
                 ※レッスン受講中の方
               </p>
             </div>
@@ -137,7 +154,7 @@ export default function UserTypeSelect() {
           💡 料金について
         </h3>
         <ul className="text-sm text-gray-700 space-y-1">
-          <li>• 表示料金は1時間あたりの金額です</li>
+          <li>• 表示料金は選択した時間（{minutes}分）の合計金額です</li>
           <li>• お支払いは当日、受付にて現金でお願いします</li>
           <li>• 生徒料金は、おんぷ館でレッスンを受講されている方が対象です</li>
         </ul>

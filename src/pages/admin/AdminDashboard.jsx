@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaCalendarAlt, FaMusic, FaDoorOpen, FaSignOutAlt, FaChartBar } from 'react-icons/fa';
+import { FaCalendarAlt, FaMusic, FaDoorOpen, FaSignOutAlt, FaChartBar, FaBan, FaClock, FaBullhorn } from 'react-icons/fa';
 import { supabase } from '../../lib/supabase';
 import { format, startOfToday, startOfWeek, endOfWeek } from 'date-fns';
 
@@ -78,7 +78,7 @@ export default function AdminDashboard() {
   const menuItems = [
     {
       title: '予約管理',
-      description: '予約の確認・キャンセル・検索',
+      description: '予約の確認・編集・キャンセル・CSV出力',
       icon: FaCalendarAlt,
       color: 'bg-blue-500',
       hoverColor: 'hover:bg-blue-600',
@@ -86,29 +86,19 @@ export default function AdminDashboard() {
     },
     {
       title: 'スタジオ管理',
-      description: 'スタジオの休止設定・情報編集',
+      description: 'スタジオ設定・営業時間管理',
       icon: FaMusic,
       color: 'bg-green-500',
       hoverColor: 'hover:bg-green-600',
       path: '/admin/studios'
     },
     {
-      title: '休業日管理',
-      description: '臨時休業日の登録・削除',
-      icon: FaDoorOpen,
+      title: 'お知らせ管理',
+      description: 'お知らせの作成・編集・公開管理',
+      icon: FaBullhorn,
       color: 'bg-orange-500',
       hoverColor: 'hover:bg-orange-600',
-      path: '/admin/holidays',
-      disabled: true // Phase 3.1では実装しない
-    },
-    {
-      title: '統計・レポート',
-      description: '予約状況の分析・レポート',
-      icon: FaChartBar,
-      color: 'bg-purple-500',
-      hoverColor: 'hover:bg-purple-600',
-      path: '/admin/reports',
-      disabled: true // Phase 3.1では実装しない
+      path: '/admin/announcements'
     }
   ];
 
@@ -144,7 +134,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* メニューグリッド */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {menuItems.map((item) => {
             const Icon = item.icon;
             return (

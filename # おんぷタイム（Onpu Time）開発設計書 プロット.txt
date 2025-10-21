@@ -1,0 +1,1576 @@
+# おんぷタイム（Onpu Time）開発設計書
+
+## 📋 プロジェクト概要
+
+### プロジェクト名
+**おんぷタイム（Onpu Time）**
+- 正式名称：おんぷタイム
+- 英語表記：Onpu Time
+- 略称：おんタイム
+- コンセプト：「あなたの音楽の時間を、もっと自由に」
+
+### プロジェクトディレクトリ
+**D:/claude/onpu-time**
+
+### 開発目的
+1. **スタジオ稼働率の向上**: 午前中や早い時間帯の空き時間を有効活用
+2. **個人練習需要の取り込み**: 30分〜1時間の短時間利用を促進
+3. **情報発信のデジタル化**: 紙媒体「おんぷ館便り」のWeb化とAI活用による記事作成の効率化
+4. **予約の効率化**: スタッフの電話対応負担軽減
+5. **コミュニケーション強化**: 発表会・イベント情報の迅速な発信
+
+### プロジェクトの2本柱
+#### 📅 柱1: スタジオ予約システム
+- リアルタイム空室確認
+- オンライン予約受付
+- 予約管理・キャンセル対応
+
+#### 📰 柱2: 情報発信システム
+- お知らせ・記事作成（AI支援）
+- イベント告知・発表会情報
+- 写真・動画ギャラリー
+- Instagram連携
+
+### ターゲットユーザー
+- レッスン生（復習・自主練習）
+- 近隣の音楽愛好家
+- 短時間スタジオ利用を希望する個人
+
+---
+
+## 🎯 開発戦略：段階的アプローチ
+
+### Phase 1: プロトタイプ版（見せるための簡易版）
+**目的**: スタッフに使用イメージを共有、フィードバック収集  
+**期間**: 1-3日  
+**機能**: UI/UX確認用、実データ保存なし
+
+### Phase 2: 実用版（管理機能なし）
+**目的**: 実運用開始、データ蓄積  
+**期間**: 1-2週間  
+**機能**: 予約機能フル実装、お知らせは開発者が更新
+
+### Phase 3: 完全版（管理機能つき）
+**目的**: スタッフによる自律的な運用  
+**期間**: 1ヶ月  
+**機能**: Notion連携、Instagram連携、管理画面
+
+---
+
+## 🏗️ システム構成
+
+### フロントエンド技術スタック
+```
+├── React 18（SPA構築）
+├── React Router（ページ遷移）
+├── Tailwind CSS（スタイリング）
+├── Headless UI（UIコンポーネント）
+├── date-fns（日付処理）
+├── React Icons（アイコン）
+└── Framer Motion（アニメーション）
+```
+
+### バックエンド技術スタック（Phase 2以降）
+```
+├── Supabase（データベース・認証）
+│   ├── PostgreSQL（予約データ）
+│   ├── Storage（画像保存）
+│   └── Auth（管理者ログイン）
+└── Notion API（お知らせ管理）
+```
+
+### デプロイ・ホスティング
+```
+├── Vercel or Netlify（フロントエンド）
+├── カスタムドメイン対応
+└── SSL自動設定
+```
+
+---
+
+## 📱 画面設計・機能仕様
+
+### 1. トップ画面（ホーム）
+
+#### レイアウト構成
+```
+┌────────────────────────────────┐
+│  🎵 おんぷ館                    │ ← ヘッダー
+│  [お知らせ] [予約する]          │
+└────────────────────────────────┘
+┌────────────────────────────────┐
+│  📢 お知らせ（横スライド）      │
+│  ← → 自動スクロール             │
+├────────────────────────────────┤
+│  🎉 発表会のご案内              │
+│  12月15日(日) 14:00開演         │
+│  [詳細を見る]                   │
+└────────────────────────────────┘
+┌────────────────────────────────┐
+│  🎹 スタジオを予約する          │
+│  [おんぷ館エリア（A-G室）]      │
+│  [みどり楽器エリア]             │
+└────────────────────────────────┘
+```
+
+#### お知らせスライドショー仕様
+**参考**: イオンシネマのメインビジュアル
+
+- **表示形式**: カルーセル形式（横スクロール）
+- **自動切替**: 5秒間隔
+- **操作**: 
+  - 左右矢印ボタン
+  - インジケーター（● ● ●）
+  - スワイプ対応（スマホ）
+- **お知らせ構成**:
+  - タイトル（大見出し）
+  - サブテキスト（日時・概要）
+  - 画像（オプション）
+  - CTAボタン「詳細を見る」
+
+#### Phase 1用ダミーデータ
+```javascript
+const newsData = [
+  {
+    id: 1,
+    title: "🎉 クリスマス発表会のご案内",
+    subtitle: "12月15日(日) 14:00開演",
+    description: "今年もクリスマス発表会を開催します！",
+    image: null,
+    date: "2025-10-10"
+  },
+  {
+    id: 2,
+    title: "🎹 スタジオB グランドピアノ入替完了",
+    subtitle: "ヤマハC3X導入",
+    description: "より良い音色でお楽しみいただけます",
+    image: null,
+    date: "2025-10-08"
+  },
+  {
+    id: 3,
+    title: "📢 年末年始の営業時間変更",
+    subtitle: "12/29-1/3は休業",
+    description: "1月4日より通常営業いたします",
+    image: null,
+    date: "2025-10-05"
+  },
+  {
+    id: 4,
+    title: "🎸 みどり楽器スタジオ料金改定",
+    subtitle: "11月より新料金",
+    description: "ドラム室：1時間1,500円→1,800円",
+    image: null,
+    date: "2025-10-03"
+  },
+  {
+    id: 5,
+    title: "🌟 Instagram始めました",
+    subtitle: "@onpukan_official",
+    description: "レッスン風景や発表会の様子を投稿中",
+    image: null,
+    date: "2025-10-01"
+  }
+];
+```
+
+---
+
+### 2. スタジオ予約フロー
+
+#### 全体フロー設計（イオンシネマ参考）
+```
+Step 1: エリア選択
+  ↓
+Step 2: 日時選択（カレンダー + 時間帯）
+  ↓
+Step 3: スタジオ選択
+  ↓
+Step 3.5: 利用者区分選択（一般 or 生徒）← 新規追加
+  ↓
+Step 4: 予約者情報入力
+  ↓
+Step 5: 確認・完了
+```
+
+---
+
+#### Step 1: エリア選択
+
+```
+┌────────────────────────────────┐
+│  < 戻る  スタジオエリアを選ぶ   │
+├────────────────────────────────┤
+│  ┌──────────────────────────┐ │
+│  │  🎹 おんぷ館エリア         │ │
+│  │  A〜G室（7部屋）          │ │
+│  │  ピアノ・歌・弦楽器対応    │ │
+│  │  660円〜/時間            │ │
+│  │  [選択する]               │ │
+│  └──────────────────────────┘ │
+│                                │
+│  ┌──────────────────────────┐ │
+│  │  🥁 みどり楽器エリア       │ │
+│  │  ドラム×2、ギター・ベース×1│ │
+│  │  本格的バンド練習に最適    │ │
+│  │  660円〜/時間            │ │
+│  │  [選択する]               │ │
+│  └──────────────────────────┘ │
+└────────────────────────────────┘
+```
+
+---
+
+#### Step 2: 日時選択
+
+**カレンダー表示（イオンシネマ参考）**
+```
+┌────────────────────────────────┐
+│  < 戻る  日時を選ぶ             │
+├────────────────────────────────┤
+│  📅 2025年10月  [< 今月 >]      │
+│                                │
+│   月  火  水  木  金  土  日    │
+│        1   2   3   4   5   6   │
+│   7   8   9  [10] 11  12  13   │ ← 選択中
+│  14  15  16  17  18  19  20    │
+│  21  22  23  24  25  26  27    │
+│  28  29  30  31                │
+├────────────────────────────────┤
+│  🕐 利用時間（10/10 木曜日）    │
+│                                │
+│  ○ 10:00-11:00  空室7          │
+│  ○ 11:00-12:00  空室5          │
+│  ○ 13:00-14:00  空室6          │
+│  △ 14:00-15:00  空室2          │ ← 残りわずか
+│  × 15:00-16:00  満室           │ ← 予約不可
+│  ○ 16:00-17:00  空室4          │
+│  ○ 17:00-18:00  空室3          │
+│  ○ 18:00-19:00  空室4          │
+│  ○ 19:00-20:00  空室6          │
+├────────────────────────────────┤
+│  [次へ] ← オレンジボタン        │
+└────────────────────────────────┘
+```
+
+**空室状態の色分け（イオンシネマ方式）**
+- ○ 緑色：空室あり（3室以上）
+- △ オレンジ色：残りわずか（1-2室）
+- × グレー：満室・選択不可
+
+---
+
+#### Step 3: スタジオ選択
+
+**おんぷ館エリアの場合**
+```
+┌────────────────────────────────┐
+│  < 戻る  スタジオを選ぶ         │
+├────────────────────────────────┤
+│  おんぷ館エリア                │
+│  10/10 (木) 13:00-14:00        │
+├────────────────────────────────┤
+│  ┌──────────────────────────┐ │
+│  │ 🎹 Aスタジオ              │ │
+│  │ グランドピアノ            │ │
+│  │ 一般1,600円 / 生徒1,100円 │ │
+│  │ [選択する]               │ │
+│  └──────────────────────────┘ │
+│                                │
+│  ┌──────────────────────────┐ │
+│  │ 🎹 Bスタジオ              │ │
+│  │ アップライトピアノ        │ │
+│  │ 一般1,100円 / 生徒660円   │ │
+│  │ [選択する]               │ │
+│  └──────────────────────────┘ │
+│                                │
+│  ┌──────────────────────────┐ │
+│  │ 🎵 Cスタジオ              │ │
+│  │ 防音室（楽器持込可）      │ │
+│  │ 一般1,100円 / 生徒660円   │ │
+│  │ [選択する]               │ │
+│  └──────────────────────────┘ │
+│                                │
+│  ... D-G室も同様（一般1,100円/生徒660円）
+└────────────────────────────────┘
+```
+
+**みどり楽器エリアの場合**
+```
+┌────────────────────────────────┐
+│  ┌──────────────────────────┐ │
+│  │ 🥁 ドラム室A              │ │
+│  │ Pearl ドラムセット        │ │
+│  │ シンバル・ペダル完備      │ │
+│  │ 一般1,000円 / 生徒700円   │ │
+│  │ [選択する]               │ │
+│  └──────────────────────────┘ │
+│                                │
+│  ┌──────────────────────────┐ │
+│  │ 🥁 ドラム室B              │ │
+│  │ YAMAHA ドラムセット       │ │
+│  │ 電子ドラム併設            │ │
+│  │ 一般1,000円 / 生徒700円   │ │
+│  │ [選択する]               │ │
+│  └──────────────────────────┘ │
+│                                │
+│  ┌──────────────────────────┐ │
+│  │ 🎸 ギター・ベース室       │ │
+│  │ アンプ・エフェクター完備  │ │
+│  │ 一般1,100円 / 生徒660円   │ │
+│  │ [選択する]               │ │
+│  └──────────────────────────┘ │
+└────────────────────────────────┘
+```
+
+---
+
+#### Step 3.5: 利用者区分選択（新規追加）
+
+**スタジオ選択後に表示**
+```
+┌────────────────────────────────┐
+│  < 戻る  利用者区分を選ぶ       │
+├────────────────────────────────┤
+│  選択したスタジオ              │
+│  おんぷ館 Aスタジオ            │
+│  10/10 (木) 13:00-14:00        │
+├────────────────────────────────┤
+│  あなたは？                    │
+│                                │
+│  ┌──────────────────────────┐ │
+│  │ ○ 一般のお客様            │ │
+│  │   1,600円 / 1時間         │ │
+│  └──────────────────────────┘ │
+│                                │
+│  ┌──────────────────────────┐ │
+│  │ ○ 生徒さん                │ │
+│  │   1,100円 / 1時間         │ │
+│  │   ※レッスン受講中の方     │ │
+│  └──────────────────────────┘ │
+├────────────────────────────────┤
+│  [次へ] ← 選択後に有効化       │
+└────────────────────────────────┘
+```
+
+---
+
+#### Step 4: 予約者情報入力
+
+**最小限の入力項目（イオンシネマの思想）**
+```
+┌────────────────────────────────┐
+│  < 戻る  予約情報を入力         │
+├────────────────────────────────┤
+│  お名前 *                      │
+│  [                    ]        │
+│                                │
+│  電話番号 *                    │
+│  [                    ]        │
+│                                │
+│  メールアドレス（任意）        │
+│  [                    ]        │
+│  ※予約確認メールを送信します   │
+├────────────────────────────────┤
+│  📋 予約内容                   │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━  │
+│  エリア: おんぷ館              │
+│  日時: 10/10 (木) 13:00-14:00  │
+│  スタジオ: Aスタジオ           │
+│  料金: 1,500円                 │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━  │
+│                                │
+│  ☑ 利用規約に同意する          │
+├────────────────────────────────┤
+│  [予約を確定する] ← オレンジ    │
+└────────────────────────────────┘
+```
+
+**バリデーション**
+- 名前：必須、2文字以上
+- 電話番号：必須、10-11桁の数字
+- メール：形式チェック（任意）
+
+---
+
+#### Step 5: 予約完了
+
+**イオンシネマの完了画面を参考**
+```
+┌────────────────────────────────┐
+│  ✅ 予約が完了しました！        │
+├────────────────────────────────┤
+│  予約番号                      │
+│  【 OP-20251010-001 】         │
+│                                │
+│  📅 ご予約内容                 │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━  │
+│  おんぷ館 Aスタジオ            │
+│  2025年10月10日(木)            │
+│  13:00 - 14:00                 │
+│  料金: 1,500円（当日現金払い）  │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━  │
+│                                │
+│  📍 アクセス                   │
+│  地下鉄鶴舞線「いりなか駅」     │
+│  1番出口より徒歩2分            │
+│                                │
+│  ⚠️ 注意事項                   │
+│  • 開始時刻の5分前にお越しください│
+│  • 受付でお名前をお伝えください │
+│  • キャンセルは前日まで        │
+├────────────────────────────────┤
+│  [ホームに戻る]                │
+│  [カレンダーに追加]            │
+└────────────────────────────────┘
+```
+
+**自動送信メール（Phase 2以降）**
+```
+件名: 【おんぷタイム】スタジオ予約完了のお知らせ
+
+○○様
+
+おんぷタイムをご利用いただき、ありがとうございます。
+スタジオのご予約が完了いたしました。
+
+予約番号: OP-20251010-001
+日時: 2025年10月10日(木) 13:00-14:00
+スタジオ: おんぷ館 Aスタジオ
+料金: 1,100円（当日現金払い）
+利用区分: 生徒さん
+
+当日は開始時刻の5分前にお越しください。
+
+キャンセル・変更はこちら:
+https://onputime.vercel.app/reservation/OP-20251010-001
+
+おんぷ館
+〒466-0833 愛知県名古屋市昭和区隼人町3-10
+TEL: 052-836-0811
+```
+
+---
+
+## 🎨 デザインシステム
+
+### カラーパレット（おんぷ館オリジナル）
+
+```css
+:root {
+    /* メインカラー */
+    --primary-orange: #FF8C42;    /* おんぷ館オレンジ */
+    --primary-green: #4CAF50;     /* おんぷ館グリーン */
+    --bg-light: #FFF9F5;          /* 背景ベージュ */
+    --text-dark: #2D3748;         /* テキスト */
+    
+    /* セマンティックカラー（イオンシネマ参考） */
+    --available: #4CAF50;         /* 空室（緑） */
+    --limited: #FF8C42;           /* 残りわずか（オレンジ） */
+    --occupied: #9E9E9E;          /* 満室（グレー） */
+    --selected: #FFD700;          /* 選択中（ゴールド） */
+    
+    /* 状態カラー */
+    --success: #4CAF50;
+    --warning: #FFC107;
+    --error: #F44336;
+    --info: #2196F3;
+}
+```
+
+### タイポグラフィ
+
+```css
+/* フォントファミリー */
+font-family: 
+    'Noto Sans JP',           /* 日本語 */
+    -apple-system,            /* iOS/macOS */
+    'Segoe UI',               /* Windows */
+    sans-serif;
+
+/* サイズ階層 */
+--text-xs: 0.75rem;    /* 12px - キャプション */
+--text-sm: 0.875rem;   /* 14px - 補足 */
+--text-base: 1rem;     /* 16px - 本文 */
+--text-lg: 1.125rem;   /* 18px - リード */
+--text-xl: 1.25rem;    /* 20px - 小見出し */
+--text-2xl: 1.5rem;    /* 24px - 見出し */
+--text-3xl: 1.875rem;  /* 30px - 大見出し */
+--text-4xl: 2.25rem;   /* 36px - タイトル */
+```
+
+### スペーシング（8pxグリッドシステム）
+
+```css
+--spacing-1: 0.25rem;  /* 4px */
+--spacing-2: 0.5rem;   /* 8px */
+--spacing-3: 0.75rem;  /* 12px */
+--spacing-4: 1rem;     /* 16px */
+--spacing-5: 1.25rem;  /* 20px */
+--spacing-6: 1.5rem;   /* 24px */
+--spacing-8: 2rem;     /* 32px */
+--spacing-10: 2.5rem;  /* 40px */
+```
+
+### レスポンシブブレークポイント
+
+```css
+/* モバイル */
+@media (max-width: 640px)
+
+/* タブレット */
+@media (min-width: 641px) and (max-width: 1024px)
+
+/* デスクトップ */
+@media (min-width: 1025px)
+```
+
+---
+
+## 🗄️ データ構造設計
+
+### スタジオマスタデータ
+
+```javascript
+const studioData = {
+  // おんぷ館エリア
+  onpukan: {
+    area: "おんぷ館",
+    address: "〒466-0833 愛知県名古屋市昭和区隼人町3-10",
+    studios: [
+      {
+        id: "onpukan-a",
+        name: "Aスタジオ",
+        equipment: ["グランドピアノ", "椅子", "譜面台"],
+        capacity: 2,
+        hourlyRate: 1500,
+        features: ["防音", "空調"]
+      },
+      {
+        id: "onpukan-b",
+        name: "Bスタジオ",
+        equipment: ["アップライトピアノ", "椅子", "譜面台"],
+        capacity: 2,
+        hourlyRate: 1200,
+        features: ["防音", "空調"]
+      },
+      {
+        id: "onpukan-c",
+        name: "Cスタジオ",
+        equipment: ["防音室", "譜面台"],
+        capacity: 3,
+        hourlyRate: 1000,
+        features: ["防音", "楽器持込可"]
+      }
+      // D-G室も同様
+    ]
+  },
+  
+  // みどり楽器エリア
+  midori: {
+    area: "みどり楽器",
+    address: "おんぷ館向かい",
+    studios: [
+      {
+        id: "midori-drum-a",
+        name: "ドラム室A",
+        equipment: ["Pearl ドラムセット", "シンバル", "ペダル"],
+        capacity: 2,
+        hourlyRate: 1800,
+        features: ["防音", "空調", "スティック貸出"]
+      },
+      {
+        id: "midori-drum-b",
+        name: "ドラム室B",
+        equipment: ["YAMAHA ドラムセット", "電子ドラム"],
+        capacity: 2,
+        hourlyRate: 1800,
+        features: ["防音", "空調"]
+      },
+      {
+        id: "midori-guitar",
+        name: "ギター・ベース室",
+        equipment: ["アンプ", "エフェクター", "シールド"],
+        capacity: 3,
+        hourlyRate: 1500,
+        features: ["防音", "空調", "楽器レンタル"]
+      }
+    ]
+  }
+};
+```
+
+### 予約データ構造
+
+```javascript
+const reservationSchema = {
+  id: "OP-20251010-001",           // 予約番号
+  studioId: "onpukan-a",           // スタジオID
+  date: "2025-10-10",              // 日付
+  startTime: "13:00",              // 開始時刻
+  endTime: "14:00",                // 終了時刻
+  userType: "student",             // general（一般） or student（生徒）
+  userName: "山田太郎",            // 予約者名
+  phone: "090-1234-5678",          // 電話番号
+  email: "yamada@example.com",     // メールアドレス（任意）
+  totalPrice: 1100,                // 料金（区分により変動）
+  status: "confirmed",             // confirmed / cancelled
+  createdAt: "2025-10-09T10:30:00", // 予約日時
+  notes: ""                        // 備考
+};
+```
+
+### お知らせデータ構造
+
+```javascript
+const newsSchema = {
+  id: 1,
+  title: "クリスマス発表会のご案内",
+  subtitle: "12月15日(日) 14:00開演",
+  description: "今年もクリスマス発表会を開催します！",
+  image: "https://...",            // 画像URL（任意）
+  category: "event",               // event / facility / lesson
+  date: "2025-10-10",              // 投稿日
+  priority: 1,                     // 表示優先度（1-5）
+  isActive: true                   // 表示/非表示
+};
+```
+
+---
+
+## 🚀 開発ロードマップ
+
+### Phase 1: プロトタイプ版（1-3日）
+
+**目標**: スタッフに見せられるデモ作成
+
+**実装内容**:
+- [x] プロジェクトセットアップ（React + Vite）
+- [ ] デザインシステム構築（Tailwind設定）
+- [ ] トップ画面
+  - [ ] ヘッダー・ナビゲーション
+  - [ ] お知らせスライドショー（ダミーデータ）
+  - [ ] CTAボタン
+- [ ] 予約フロー（UI/UXのみ）
+  - [ ] エリア選択画面
+  - [ ] 日時選択画面（カレンダー）
+  - [ ] スタジオ選択画面
+  - [ ] 情報入力画面
+  - [ ] 完了画面
+- [ ] レスポンシブ対応
+- [ ] アニメーション実装
+
+**データ**: すべてハードコーディング（固定データ）
+
+**デプロイ**: Vercel無料プラン
+
+---
+
+### Phase 2: 実用版（1-2週間）
+
+**目標**: 実際の予約受付開始
+
+**追加実装**:
+- [ ] Supabaseセットアップ
+  - [ ] データベース設計
+  - [ ] スタジオマスタ登録
+  - [ ] 予約テーブル作成
+- [ ] 予約機能実装
+  - [ ] 空室状況リアルタイム取得
+  - [ ] 予約登録処理
+  - [ ] 重複予約防止
+  - [ ] 予約確認・キャンセル
+- [ ] メール通知
+  - [ ] 予約完了メール
+  - [ ] リマインダーメール（前日）
+  - [ ] キャンセルメール
+- [ ] 管理画面（簡易版）
+  - [ ] 予約一覧表示
+  - [ ] 予約編集・削除
+  - [ ] スタジオ設定
+
+**データ**: Supabase PostgreSQL
+
+---
+
+### Phase 3: 完全版（1ヶ月）
+
+**目標**: スタッフによる自律運用
+
+**追加実装**:
+- [ ] Notion連携
+  - [ ] Notion APIセットアップ
+  - [ ] お知らせ自動取得
+  - [ ] キャッシュ機能
+- [ ] Instagram連携
+  - [ ] Instagram Graph API
+  - [ ] 最新投稿取得
+  - [ ] お知らせへの自動反映
+- [ ] 管理画面（完全版）
+  - [ ] お知らせ管理（Notion経由）
+  - [ ] 統計ダッシュボード
+  - [ ] 売上レポート
+- [ ] PWA化
+  - [ ] オフライン対応
+  - [ ] プッシュ通知
+  - [ ] ホーム画面追加
+
+---
+
+## 🔒 セキュリティ・パフォーマンス
+
+### セキュリティ対策
+
+```
+✅ HTTPS強制（SSL証明書）
+✅ CORS設定（Supabase）
+✅ SQLインジェクション対策（Supabase RLS）
+✅ XSS対策（React自動エスケープ）
+✅ CSRF対策（トークン認証）
+✅ 個人情報の暗号化保存
+✅ 管理画面の認証必須
+```
+
+### パフォーマンス最適化
+
+```
+✅ 画像遅延読み込み（Lazy Loading）
+✅ コード分割（React.lazy）
+✅ キャッシュ戦略（Service Worker）
+✅ CDN活用（画像・静的ファイル）
+✅ バンドルサイズ最小化
+✅ ライトハウススコア90点以上目標
+```
+
+---
+
+## 📊 運用・分析
+
+### KPI設定
+
+**予約関連**
+- 予約件数（日次・月次）
+- 予約完了率（離脱率）
+- スタジオ稼働率
+- 時間帯別利用率
+
+**ユーザー行動**
+- ページビュー数
+- 平均滞在時間
+- デバイス比率（スマホ/PC）
+- 流入経路
+
+**ビジネス指標**
+- 売上（日次・月次）
+- 平均予約単価
+- リピート率
+- 空き時間の予約率向上
+
+### Google Analytics設定
+
+```javascript
+// イベントトラッキング設定
+gtag('event', 'reservation_complete', {
+  'studio_id': 'onpukan-a',
+  'date': '2025-10-10',
+  'time_slot': '13:00-14:00',
+  'value': 1500
+});
+
+gtag('event', 'reservation_cancel', {
+  'reservation_id': 'OP-20251010-001'
+});
+```
+
+---
+
+## 💰 コスト見積もり
+
+### 全Phase共通（完全無料構成）
+```
+✅ Vercel（無料プラン）: 0円/月
+  - 100GB 帯域幅
+  - 自動SSL証明書
+  - vercel.app ドメイン使用
+  
+✅ Supabase（無料プラン）: 0円/月
+  - 500MB DB容量
+  - 1GB ファイルストレージ
+  - 50,000 月間アクティブユーザー
+  - 2GB データ転送/月
+  
+✅ Notion（無料プラン）: 0円/月
+  - API連携可能
+  - 無制限ページ
+  
+✅ 開発環境（ローカル）: 0円
+─────────────────────────
+合計: 完全無料（0円/月）
+```
+
+**無料プランの制限と対策**:
+- 予約データが500MBを超えた場合 → 古いデータのアーカイブ処理
+- 月間50,000ユーザーを超える場合 → 有料化を検討（成功の証！）
+- vercel.appドメイン → 将来的に独自ドメイン追加可能（年1,500円程度）
+
+---
+
+## 📝 開発タスク詳細（Phase 1）
+
+### 1. プロジェクトセットアップ（30分）
+
+```bash
+# Reactプロジェクト作成
+npm create vite@latest onpu-time -- --template react
+cd onpu-time
+
+# 必要パッケージインストール
+npm install react-router-dom
+npm install -D tailwindcss postcss autoprefixer
+npm install date-fns
+npm install framer-motion
+npm install react-icons
+npm install swiper
+
+# Tailwind初期化
+npx tailwindcss init -p
+```
+
+**ディレクトリ構造**:
+```
+onpu-time/
+├── src/
+│   ├── components/          # 共通コンポーネント
+│   │   ├── Header.jsx
+│   │   ├── Footer.jsx
+│   │   ├── NewsSlider.jsx
+│   │   └── Button.jsx
+│   ├── pages/              # ページコンポーネント
+│   │   ├── Home.jsx
+│   │   ├── AreaSelect.jsx
+│   │   ├── DateSelect.jsx
+│   │   ├── StudioSelect.jsx
+│   │   ├── UserTypeSelect.jsx  ← 新規（利用者区分選択）
+│   │   ├── ReservationForm.jsx
+│   │   └── Complete.jsx
+│   ├── data/               # ダミーデータ
+│   │   ├── newsData.js
+│   │   └── studioData.js
+│   ├── styles/             # スタイル
+│   │   └── index.css
+│   ├── App.jsx
+│   └── main.jsx
+├── public/
+│   └── images/
+├── tailwind.config.js
+└── package.json
+```
+
+---
+
+### 2. デザインシステム実装（1時間）
+
+**tailwind.config.js**:
+```javascript
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          orange: '#FF8C42',
+          green: '#4CAF50',
+        },
+        bg: {
+          light: '#FFF9F5',
+        },
+        status: {
+          available: '#4CAF50',
+          limited: '#FF8C42',
+          occupied: '#9E9E9E',
+          selected: '#FFD700',
+        }
+      },
+      fontFamily: {
+        sans: ['Noto Sans JP', 'sans-serif'],
+      },
+      spacing: {
+        '18': '4.5rem',
+        '88': '22rem',
+      }
+    },
+  },
+  plugins: [],
+}
+```
+
+**index.css**:
+```css
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+  
+  body {
+    @apply bg-bg-light text-gray-800;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-orange text-white px-6 py-3 rounded-lg 
+           font-medium hover:bg-orange-600 transition-colors
+           active:scale-95 transform;
+  }
+  
+  .btn-secondary {
+    @apply bg-primary-green text-white px-6 py-3 rounded-lg
+           font-medium hover:bg-green-600 transition-colors;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow-md p-6 
+           hover:shadow-lg transition-shadow;
+  }
+}
+```
+
+---
+
+### 3. トップページ実装（2-3時間）
+
+#### Header.jsx
+```jsx
+import { Link } from 'react-router-dom';
+import { FaBell, FaCalendarAlt } from 'react-icons/fa';
+
+export default function Header() {
+  return (
+    <header className="bg-primary-green text-white shadow-md sticky top-0 z-50">
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          <Link to="/" className="flex items-center space-x-2">
+            <span className="text-2xl">🎵</span>
+            <h1 className="text-xl font-bold">おんぷタイム</h1>
+          </Link>
+          
+          <nav className="flex space-x-4">
+            <Link 
+              to="/" 
+              className="flex items-center space-x-1 hover:text-yellow-200 transition"
+            >
+              <FaBell />
+              <span>お知らせ</span>
+            </Link>
+            <Link 
+              to="/reserve" 
+              className="flex items-center space-x-1 hover:text-yellow-200 transition"
+            >
+              <FaCalendarAlt />
+              <span>予約する</span>
+            </Link>
+          </nav>
+        </div>
+      </div>
+    </header>
+  );
+}
+```
+
+#### NewsSlider.jsx（イオンシネマ風スライドショー）
+```jsx
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, Pagination, Navigation } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/pagination';
+import 'swiper/css/navigation';
+import { newsData } from '../data/newsData';
+
+export default function NewsSlider() {
+  return (
+    <div className="w-full bg-white rounded-lg shadow-lg overflow-hidden">
+      <Swiper
+        modules={[Autoplay, Pagination, Navigation]}
+        spaceBetween={0}
+        slidesPerView={1}
+        autoplay={{ delay: 5000, disableOnInteraction: false }}
+        pagination={{ clickable: true }}
+        navigation={true}
+        loop={true}
+        className="h-64 md:h-80"
+      >
+        {newsData.map((news) => (
+          <SwiperSlide key={news.id}>
+            <div className="h-full flex items-center justify-center bg-gradient-to-r from-primary-green to-primary-orange p-8 text-white">
+              <div className="text-center max-w-2xl">
+                <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                  {news.title}
+                </h2>
+                <p className="text-xl md:text-2xl mb-4">
+                  {news.subtitle}
+                </p>
+                <p className="text-base md:text-lg mb-6">
+                  {news.description}
+                </p>
+                <button className="bg-white text-primary-orange px-8 py-3 rounded-full font-bold hover:bg-yellow-100 transition">
+                  詳細を見る
+                </button>
+              </div>
+            </div>
+          </SwiperSlide>
+        ))}
+      </Swiper>
+    </div>
+  );
+}
+```
+
+#### Home.jsx
+```jsx
+import NewsSlider from '../components/NewsSlider';
+import { Link } from 'react-router-dom';
+import { FaMusic, FaDrum } from 'react-icons/fa';
+
+export default function Home() {
+  return (
+    <div className="min-h-screen">
+      {/* ヒーローセクション */}
+      <section className="container mx-auto px-4 py-8">
+        <NewsSlider />
+      </section>
+
+      {/* スタジオ予約CTA */}
+      <section className="container mx-auto px-4 py-12">
+        <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">
+          🎹 スタジオを予約する
+        </h2>
+        
+        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          {/* おんぷ館エリア */}
+          <Link 
+            to="/reserve/area?area=onpukan"
+            className="card hover:scale-105 transform transition"
+          >
+            <div className="text-center">
+              <FaMusic className="text-6xl text-primary-green mx-auto mb-4" />
+              <h3 className="text-2xl font-bold mb-2">おんぷ館エリア</h3>
+              <p className="text-gray-600 mb-4">
+                A〜G室（7部屋）
+              </p>
+              <p className="text-sm text-gray-500 mb-6">
+                ピアノ・歌・弦楽器対応
+              </p>
+              <button className="btn-primary w-full">
+                予約する
+              </button>
+            </div>
+          </Link>
+
+          {/* みどり楽器エリア */}
+          <Link 
+            to="/reserve/area?area=midori"
+            className="card hover:scale-105 transform transition"
+          >
+            <div className="text-center">
+              <FaDrum className="text-6xl text-primary-orange mx-auto mb-4" />
+              <h3 className="text-2xl font-bold mb-2">みどり楽器エリア</h3>
+              <p className="text-gray-600 mb-4">
+                ドラム×2、ギター・ベース×1
+              </p>
+              <p className="text-sm text-gray-500 mb-6">
+                本格的バンド練習に最適
+              </p>
+              <button className="btn-primary w-full">
+                予約する
+              </button>
+            </div>
+          </Link>
+        </div>
+      </section>
+
+      {/* 特徴セクション */}
+      <section className="bg-white py-12 mt-8">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            おんぷ館の特徴
+          </h2>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="text-5xl mb-4">🚉</div>
+              <h3 className="text-xl font-bold mb-2">駅近便利</h3>
+              <p className="text-gray-600">
+                地下鉄いりなか駅<br />
+                徒歩2分
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-5xl mb-4">🎹</div>
+              <h3 className="text-xl font-bold mb-2">充実の設備</h3>
+              <p className="text-gray-600">
+                グランドピアノから<br />
+                ドラムセットまで
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-5xl mb-4">⏰</div>
+              <h3 className="text-xl font-bold mb-2">柔軟な予約</h3>
+              <p className="text-gray-600">
+                30分から予約可能<br />
+                当日予約もOK
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+```
+
+---
+
+### 4. 予約フロー実装（4-6時間）
+
+#### DateSelect.jsx（カレンダー選択）
+```jsx
+import { useState } from 'react';
+import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday } from 'date-fns';
+import { ja } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
+
+export default function DateSelect() {
+  const navigate = useNavigate();
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedTime, setSelectedTime] = useState(null);
+
+  // カレンダー生成
+  const monthStart = startOfMonth(new Date());
+  const monthEnd = endOfMonth(new Date());
+  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+
+  // 時間帯データ（ダミー）
+  const timeSlots = [
+    { time: '10:00-11:00', available: 7, status: 'available' },
+    { time: '11:00-12:00', available: 5, status: 'available' },
+    { time: '13:00-14:00', available: 6, status: 'available' },
+    { time: '14:00-15:00', available: 2, status: 'limited' },
+    { time: '15:00-16:00', available: 0, status: 'occupied' },
+    { time: '16:00-17:00', available: 4, status: 'available' },
+    { time: '17:00-18:00', available: 3, status: 'available' },
+    { time: '18:00-19:00', available: 4, status: 'available' },
+    { time: '19:00-20:00', available: 6, status: 'available' },
+  ];
+
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'available': return 'text-status-available';
+      case 'limited': return 'text-status-limited';
+      case 'occupied': return 'text-status-occupied';
+      default: return 'text-gray-500';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch(status) {
+      case 'available': return '○';
+      case 'limited': return '△';
+      case 'occupied': return '×';
+      default: return '-';
+    }
+  };
+
+  const handleNext = () => {
+    if (selectedTime) {
+      navigate('/reserve/studio', {
+        state: { date: selectedDate, time: selectedTime }
+      });
+    }
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <button 
+        onClick={() => navigate(-1)}
+        className="mb-6 text-primary-green hover:underline"
+      >
+        ← 戻る
+      </button>
+
+      <h1 className="text-3xl font-bold mb-8">日時を選ぶ</h1>
+
+      {/* カレンダー */}
+      <div className="card mb-8">
+        <h2 className="text-xl font-bold mb-4">
+          📅 {format(new Date(), 'yyyy年MM月', { locale: ja })}
+        </h2>
+        
+        <div className="grid grid-cols-7 gap-2 mb-4">
+          {['月', '火', '水', '木', '金', '土', '日'].map((day) => (
+            <div key={day} className="text-center font-bold text-gray-600 p-2">
+              {day}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-2">
+          {daysInMonth.map((day) => (
+            <button
+              key={day.toString()}
+              onClick={() => setSelectedDate(day)}
+              className={`
+                p-3 rounded-lg text-center transition
+                ${isSameDay(day, selectedDate) 
+                  ? 'bg-status-selected text-white font-bold' 
+                  : isToday(day)
+                  ? 'bg-blue-100 hover:bg-blue-200'
+                  : 'hover:bg-gray-100'
+                }
+              `}
+            >
+              {format(day, 'd')}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 時間帯選択 */}
+      <div className="card">
+        <h2 className="text-xl font-bold mb-4">
+          🕐 利用時間（{format(selectedDate, 'M月d日（E）', { locale: ja })}）
+        </h2>
+
+        <div className="space-y-3">
+          {timeSlots.map((slot) => (
+            <button
+              key={slot.time}
+              onClick={() => slot.status !== 'occupied' && setSelectedTime(slot.time)}
+              disabled={slot.status === 'occupied'}
+              className={`
+                w-full p-4 rounded-lg border-2 text-left transition
+                flex items-center justify-between
+                ${selectedTime === slot.time 
+                  ? 'border-status-selected bg-yellow-50' 
+                  : slot.status === 'occupied'
+                  ? 'border-gray-200 bg-gray-50 cursor-not-allowed'
+                  : 'border-gray-200 hover:border-primary-green'
+                }
+              `}
+            >
+              <div className="flex items-center space-x-4">
+                <span className={`text-2xl font-bold ${getStatusColor(slot.status)}`}>
+                  {getStatusIcon(slot.status)}
+                </span>
+                <span className="text-lg font-medium">{slot.time}</span>
+              </div>
+              <span className="text-sm text-gray-500">
+                {slot.status === 'occupied' ? '満室' : `空室${slot.available}`}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 次へボタン */}
+      <div className="mt-8">
+        <button
+          onClick={handleNext}
+          disabled={!selectedTime}
+          className={`
+            w-full py-4 rounded-lg font-bold text-lg transition
+            ${selectedTime 
+              ? 'btn-primary' 
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }
+          `}
+        >
+          次へ
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+### 5. ダミーデータ作成（30分）
+
+#### data/newsData.js
+```javascript
+export const newsData = [
+  {
+    id: 1,
+    title: "🎉 クリスマス発表会のご案内",
+    subtitle: "12月15日(日) 14:00開演",
+    description: "今年もクリスマス発表会を開催します！生徒の皆さんの素敵な演奏をお楽しみください。",
+    date: "2025-10-10",
+    category: "event",
+    priority: 1
+  },
+  {
+    id: 2,
+    title: "🎹 スタジオB グランドピアノ入替完了",
+    subtitle: "ヤマハC3X導入",
+    description: "より良い音色でお楽しみいただけます。ぜひお試しください！",
+    date: "2025-10-08",
+    category: "facility",
+    priority: 2
+  },
+  {
+    id: 3,
+    title: "📢 年末年始の営業時間変更",
+    subtitle: "12/29-1/3は休業",
+    description: "1月4日より通常営業いたします。ご了承ください。",
+    date: "2025-10-05",
+    category: "info",
+    priority: 3
+  },
+  {
+    id: 4,
+    title: "🎸 みどり楽器スタジオ料金改定",
+    subtitle: "11月より新料金",
+    description: "ドラム室：1時間1,500円→1,800円　設備改善に伴う改定です。",
+    date: "2025-10-03",
+    category: "info",
+    priority: 4
+  },
+  {
+    id: 5,
+    title: "🌟 Instagram始めました",
+    subtitle: "@onpukan_official",
+    description: "レッスン風景や発表会の様子を投稿中！フォローお願いします♪",
+    date: "2025-10-01",
+    category: "info",
+    priority: 5
+  }
+];
+```
+
+#### data/studioData.js
+```javascript
+export const studioData = {
+  onpukan: {
+    area: "おんぷ館",
+    address: "〒466-0833 愛知県名古屋市昭和区隼人町3-10",
+    studios: [
+      {
+        id: "onpukan-a",
+        name: "Aスタジオ",
+        icon: "🎹",
+        equipment: ["グランドピアノ（ヤマハC3X）", "椅子", "譜面台"],
+        capacity: 2,
+        pricing: {
+          general: 1600,    // 一般
+          student: 1100     // 生徒
+        },
+        features: ["防音", "空調", "グランドピアノ"]
+      },
+      {
+        id: "onpukan-b",
+        name: "Bスタジオ",
+        icon: "🎹",
+        equipment: ["アップライトピアノ", "椅子", "譜面台"],
+        capacity: 2,
+        pricing: {
+          general: 1100,
+          student: 660
+        },
+        features: ["防音", "空調"]
+      },
+      {
+        id: "onpukan-c",
+        name: "Cスタジオ",
+        icon: "🎵",
+        equipment: ["防音室", "譜面台", "椅子"],
+        capacity: 3,
+        pricing: {
+          general: 1100,
+          student: 660
+        },
+        features: ["防音", "楽器持込可"]
+      },
+      // D-G室も同じ料金（一般1,100円/生徒660円）
+      {
+        id: "onpukan-d",
+        name: "Dスタジオ",
+        icon: "🎵",
+        equipment: ["防音室", "譜面台", "椅子"],
+        capacity: 3,
+        pricing: { general: 1100, student: 660 },
+        features: ["防音", "楽器持込可"]
+      },
+      {
+        id: "onpukan-e",
+        name: "Eスタジオ",
+        icon: "🎵",
+        equipment: ["防音室", "譜面台", "椅子"],
+        capacity: 3,
+        pricing: { general: 1100, student: 660 },
+        features: ["防音", "楽器持込可"]
+      },
+      {
+        id: "onpukan-f",
+        name: "Fスタジオ",
+        icon: "🎵",
+        equipment: ["防音室", "譜面台", "椅子"],
+        capacity: 3,
+        pricing: { general: 1100, student: 660 },
+        features: ["防音", "楽器持込可"]
+      },
+      {
+        id: "onpukan-g",
+        name: "Gスタジオ",
+        icon: "🎵",
+        equipment: ["防音室", "譜面台", "椅子"],
+        capacity: 3,
+        pricing: { general: 1100, student: 660 },
+        features: ["防音", "楽器持込可"]
+      }
+    ]
+  },
+  midori: {
+    area: "みどり楽器",
+    address: "おんぷ館向かい",
+    studios: [
+      {
+        id: "midori-drum-a",
+        name: "ドラム室A",
+        icon: "🥁",
+        equipment: ["Pearl ドラムセット", "シンバル各種", "ツインペダル"],
+        capacity: 2,
+        pricing: {
+          general: 1000,
+          student: 700
+        },
+        features: ["防音", "空調", "スティック貸出"]
+      },
+      {
+        id: "midori-drum-b",
+        name: "ドラム室B",
+        icon: "🥁",
+        equipment: ["YAMAHA ドラムセット", "電子ドラム（練習用）"],
+        capacity: 2,
+        pricing: {
+          general: 1000,
+          student: 700
+        },
+        features: ["防音", "空調", "静音練習可"]
+      },
+      {
+        id: "midori-guitar",
+        name: "ギター・ベース室",
+        icon: "🎸",
+        equipment: ["Marshall アンプ", "BOSS エフェクター", "シールド"],
+        capacity: 3,
+        pricing: {
+          general: 1100,
+          student: 660
+        },
+        features: ["防音", "空調", "機材レンタル"]
+      }
+    ]
+  }
+};
+```
+
+---
+
+## 🎓 開発ガイドライン
+
+### コーディング規約
+
+```javascript
+// ✅ 良い例：明確な命名
+const reservationData = {
+  studioId: 'onpukan-a',
+  date: '2025-10-10',
+  startTime: '13:00'
+};
+
+// ❌ 悪い例：不明瞭な命名
+const data = {
+  id: 'onpukan-a',
+  d: '2025-10-10',
+  t: '13:00'
+};
+
+// ✅ 良い例：コンポーネント分割
+<ReservationForm onSubmit={handleSubmit} />
+
+// ❌ 悪い例：巨大なコンポーネント
+// 1ファイルに500行のコード
+```
+
+### Git運用
+
+```bash
+# ブランチ戦略
+main          # 本番環境
+├── develop   # 開発環境
+└── feature/  # 機能開発
+
+# コミットメッセージ
+feat: お知らせスライドショー実装
+fix: 予約フォームのバリデーション修正
+style: ボタンのデザイン調整
+docs: README更新
+```
+
+---
+
+## 📖 次のステップ
+
+### Phase 1完了後にやること
+
+1. **スタッフレビュー**
+   - デモサイトを見せる
+   - フィードバック収集
+   - 改善点の洗い出し
+
+2. **Phase 2計画**
+   - Supabaseアカウント作成
+   - データベース設計詳細化
+   - メール送信サービス選定
+
+3. **ドキュメント整備**
+   - 操作マニュアル作成
+   - FAQ作成
+   - トラブルシューティングガイド
+
+---
+
+## 🏁 まとめ
+
+この開発設計書に従えば：
+
+✅ **段階的な開発**で リスクを最小化
+✅ **イオンシネマのUI/UX**を活かした使いやすい設計
+✅ **無料〜低コスト**で実現可能
+✅ **スタッフが簡単に管理**できる仕組み
+✅ **空き時間の有効活用**でビジネス目標達成
+
+**最初のプロトタイプは3日以内に完成可能です！**
+
+---
+
+## 📞 サポート・相談
+
+開発中の質問や相談はいつでもどうぞ：
+- 技術的な問題
+- デザインの調整
+- 機能追加の相談
+- Phase移行のタイミング
+
+**一緒に素晴らしいアプリを作りましょう！** 🎵

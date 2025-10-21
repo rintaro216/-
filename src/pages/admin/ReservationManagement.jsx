@@ -3,21 +3,27 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale/ja';
-import { FaArrowLeft, FaSearch, FaTrash, FaCalendarAlt, FaClock, FaMusic, FaUser, FaPhone } from 'react-icons/fa';
+import { FaArrowLeft, FaSearch, FaTrash, FaCalendarAlt, FaClock, FaMusic, FaUser, FaPhone, FaEdit, FaTimes, FaEye, FaEnvelope, FaFileExport } from 'react-icons/fa';
 
 export default function ReservationManagement() {
   const navigate = useNavigate();
   const [reservations, setReservations] = useState([]);
   const [filteredReservations, setFilteredReservations] = useState([]);
+  const [studios, setStudios] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDate, setFilterDate] = useState('');
   const [filterArea, setFilterArea] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [editingReservation, setEditingReservation] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [viewingReservation, setViewingReservation] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // 予約データを取得
   useEffect(() => {
     fetchReservations();
+    fetchStudios();
   }, []);
 
   // フィルタリング
@@ -41,6 +47,24 @@ export default function ReservationManagement() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const fetchStudios = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('studios')
+        .select('*');
+
+      if (error) throw error;
+      setStudios(data || []);
+    } catch (error) {
+      console.error('スタジオデータ取得エラー:', error);
+    }
+  };
+
+  const getStudioName = (studioId) => {
+    const studio = studios.find(s => s.id === studioId);
+    return studio ? studio.display_name : studioId;
   };
 
   const filterReservations = () => {
@@ -111,6 +135,99 @@ export default function ReservationManagement() {
 
   const getAreaName = (area) => {
     return area === 'onpukan' ? 'おんぷ館' : 'みどり楽器';
+  };
+
+  const handleViewReservation = (reservation) => {
+    setViewingReservation(reservation);
+    setShowDetailModal(true);
+  };
+
+  const handleEditReservation = (reservation) => {
+    setEditingReservation({...reservation});
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingReservation) return;
+
+    try {
+      const { error } = await supabase
+        .from('reservations')
+        .update({
+          reservation_date: editingReservation.reservation_date,
+          start_time: editingReservation.start_time,
+          end_time: editingReservation.end_time,
+          studio_id: editingReservation.studio_id,
+          area: editingReservation.area
+        })
+        .eq('reservation_number', editingReservation.reservation_number);
+
+      if (error) throw error;
+
+      alert('予約を更新しました');
+      setShowEditModal(false);
+      setEditingReservation(null);
+      fetchReservations();
+    } catch (error) {
+      console.error('更新エラー:', error);
+      alert('予約の更新に失敗しました');
+    }
+  };
+
+  const handleExportCSV = () => {
+    // CSVヘッダー
+    const headers = [
+      '予約番号',
+      'ステータス',
+      '予約日',
+      '開始時刻',
+      '終了時刻',
+      'エリア',
+      'スタジオ',
+      '顧客名',
+      '電話番号',
+      'メールアドレス',
+      '利用者区分',
+      '料金',
+      '作成日時'
+    ];
+
+    // CSVデータ作成
+    const csvData = filteredReservations.map(r => [
+      r.reservation_number,
+      r.status === 'confirmed' ? '予約確定' : r.status === 'cancelled' ? 'キャンセル済' : '利用完了',
+      r.reservation_date,
+      r.start_time,
+      r.end_time,
+      getAreaName(r.area),
+      getStudioName(r.studio_id),
+      r.customer_name,
+      r.customer_phone,
+      r.customer_email || '',
+      r.user_type === 'student' ? '学生' : '一般',
+      r.price,
+      format(new Date(r.created_at), 'yyyy/MM/dd HH:mm:ss')
+    ]);
+
+    // CSV文字列作成
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    // BOM付きUTF-8でエンコード（Excelで文字化けしないように）
+    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+    const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+
+    // ダウンロード
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `予約一覧_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -215,12 +332,22 @@ export default function ReservationManagement() {
             <h2 className="text-lg font-bold">
               予約一覧（{filteredReservations.length}件）
             </h2>
-            <button
-              onClick={fetchReservations}
-              className="px-4 py-2 bg-primary-green text-white rounded-lg hover:bg-green-600 transition"
-            >
-              再読み込み
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleExportCSV}
+                disabled={filteredReservations.length === 0}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FaFileExport className="mr-2" />
+                CSVエクスポート
+              </button>
+              <button
+                onClick={fetchReservations}
+                className="px-4 py-2 bg-primary-green text-white rounded-lg hover:bg-green-600 transition"
+              >
+                再読み込み
+              </button>
+            </div>
           </div>
 
           {isLoading ? (
@@ -236,7 +363,8 @@ export default function ReservationManagement() {
               {filteredReservations.map((reservation) => (
                 <div
                   key={reservation.id}
-                  className="border-2 border-gray-200 rounded-lg p-4 hover:border-primary-green transition"
+                  className="border-2 border-gray-200 rounded-lg p-4 hover:border-primary-green transition cursor-pointer"
+                  onClick={() => handleViewReservation(reservation)}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -265,7 +393,7 @@ export default function ReservationManagement() {
                         <div className="flex items-center">
                           <FaMusic className="text-gray-500 mr-2" />
                           <span>
-                            {getAreaName(reservation.area)} - {reservation.studio_id}
+                            {getAreaName(reservation.area)} - {getStudioName(reservation.studio_id)}
                           </span>
                         </div>
                         <div className="flex items-center">
@@ -286,13 +414,22 @@ export default function ReservationManagement() {
 
                     {/* アクション */}
                     {reservation.status === 'confirmed' && (
-                      <button
-                        onClick={() => handleCancelReservation(reservation.reservation_number)}
-                        className="ml-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition flex items-center"
-                      >
-                        <FaTrash className="mr-2" />
-                        キャンセル
-                      </button>
+                      <div className="ml-4 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => handleEditReservation(reservation)}
+                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition flex items-center"
+                        >
+                          <FaEdit className="mr-2" />
+                          編集
+                        </button>
+                        <button
+                          onClick={() => handleCancelReservation(reservation.reservation_number)}
+                          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition flex items-center"
+                        >
+                          <FaTrash className="mr-2" />
+                          キャンセル
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -301,6 +438,285 @@ export default function ReservationManagement() {
           )}
         </div>
       </main>
+
+      {/* 詳細モーダル */}
+      {showDetailModal && viewingReservation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">予約詳細</h2>
+              <button
+                onClick={() => {
+                  setShowDetailModal(false);
+                  setViewingReservation(null);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <FaTimes size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* ステータス */}
+              <div className="flex items-center justify-between pb-4 border-b">
+                <div className="flex items-center space-x-3">
+                  <span className="text-2xl font-bold text-primary-green">
+                    {viewingReservation.reservation_number}
+                  </span>
+                  {getStatusBadge(viewingReservation.status)}
+                </div>
+                <div className="text-2xl font-bold text-primary-orange">
+                  ¥{viewingReservation.price?.toLocaleString()}
+                </div>
+              </div>
+
+              {/* 予約情報 */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-bold mb-3 flex items-center">
+                  <FaCalendarAlt className="mr-2" />
+                  予約情報
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-gray-600">予約日：</span>
+                    <span className="font-bold">
+                      {format(new Date(viewingReservation.reservation_date), 'yyyy年M月d日（E）', { locale: ja })}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">時間：</span>
+                    <span className="font-bold">
+                      {viewingReservation.start_time.slice(0, 5)}〜{viewingReservation.end_time.slice(0, 5)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">エリア：</span>
+                    <span className="font-bold">{getAreaName(viewingReservation.area)}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">スタジオ：</span>
+                    <span className="font-bold">{getStudioName(viewingReservation.studio_id)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 顧客情報 */}
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="font-bold mb-3 flex items-center">
+                  <FaUser className="mr-2" />
+                  顧客情報
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="text-gray-600">氏名：</span>
+                    <span className="font-bold">{viewingReservation.customer_name}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">電話番号：</span>
+                    <span className="font-bold">{viewingReservation.customer_phone}</span>
+                  </div>
+                  {viewingReservation.customer_email && (
+                    <div>
+                      <span className="text-gray-600">メールアドレス：</span>
+                      <span className="font-bold">{viewingReservation.customer_email}</span>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-gray-600">利用者区分：</span>
+                    <span className="font-bold">
+                      {viewingReservation.user_type === 'student' ? '学生' : '一般'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* システム情報 */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-bold mb-3">システム情報</h3>
+                <div className="space-y-2 text-xs text-gray-600">
+                  <div>
+                    <span>予約作成日時：</span>
+                    <span className="ml-2">
+                      {format(new Date(viewingReservation.created_at), 'yyyy/MM/dd HH:mm:ss')}
+                    </span>
+                  </div>
+                  {viewingReservation.cancelled_at && (
+                    <div>
+                      <span>キャンセル日時：</span>
+                      <span className="ml-2">
+                        {format(new Date(viewingReservation.cancelled_at), 'yyyy/MM/dd HH:mm:ss')}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* ボタン */}
+            <div className="flex gap-3 mt-6">
+              {viewingReservation.status === 'confirmed' && (
+                <>
+                  <button
+                    onClick={() => {
+                      setShowDetailModal(false);
+                      handleEditReservation(viewingReservation);
+                    }}
+                    className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition font-bold flex items-center justify-center"
+                  >
+                    <FaEdit className="mr-2" />
+                    編集
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowDetailModal(false);
+                      handleCancelReservation(viewingReservation.reservation_number);
+                    }}
+                    className="flex-1 px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-bold flex items-center justify-center"
+                  >
+                    <FaTrash className="mr-2" />
+                    キャンセル
+                  </button>
+                </>
+              )}
+              <button
+                onClick={() => {
+                  setShowDetailModal(false);
+                  setViewingReservation(null);
+                }}
+                className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-bold"
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 編集モーダル */}
+      {showEditModal && editingReservation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">予約編集</h2>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingReservation(null);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <FaTimes size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* 予約番号（編集不可） */}
+              <div>
+                <label className="block text-sm font-bold mb-2">予約番号</label>
+                <input
+                  type="text"
+                  value={editingReservation.reservation_number}
+                  disabled
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg bg-gray-100"
+                />
+              </div>
+
+              {/* エリア選択 */}
+              <div>
+                <label className="block text-sm font-bold mb-2">エリア</label>
+                <select
+                  value={editingReservation.area}
+                  onChange={(e) => setEditingReservation({...editingReservation, area: e.target.value})}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary-green"
+                >
+                  <option value="onpukan">おんぷ館</option>
+                  <option value="midori">みどり楽器</option>
+                </select>
+              </div>
+
+              {/* スタジオ選択 */}
+              <div>
+                <label className="block text-sm font-bold mb-2">スタジオ</label>
+                <select
+                  value={editingReservation.studio_id}
+                  onChange={(e) => setEditingReservation({...editingReservation, studio_id: e.target.value})}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary-green"
+                >
+                  {studios
+                    .filter(s => s.area === editingReservation.area)
+                    .map(studio => (
+                      <option key={studio.id} value={studio.id}>
+                        {studio.display_name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {/* 日付 */}
+              <div>
+                <label className="block text-sm font-bold mb-2">予約日</label>
+                <input
+                  type="date"
+                  value={editingReservation.reservation_date}
+                  onChange={(e) => setEditingReservation({...editingReservation, reservation_date: e.target.value})}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary-green"
+                />
+              </div>
+
+              {/* 開始時刻 */}
+              <div>
+                <label className="block text-sm font-bold mb-2">開始時刻</label>
+                <input
+                  type="time"
+                  value={editingReservation.start_time}
+                  onChange={(e) => setEditingReservation({...editingReservation, start_time: e.target.value})}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary-green"
+                />
+              </div>
+
+              {/* 終了時刻 */}
+              <div>
+                <label className="block text-sm font-bold mb-2">終了時刻</label>
+                <input
+                  type="time"
+                  value={editingReservation.end_time}
+                  onChange={(e) => setEditingReservation({...editingReservation, end_time: e.target.value})}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary-green"
+                />
+              </div>
+
+              {/* 顧客情報（参考表示） */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-bold mb-2">顧客情報（編集不可）</h3>
+                <div className="space-y-1 text-sm">
+                  <p><strong>氏名：</strong>{editingReservation.customer_name}</p>
+                  <p><strong>電話：</strong>{editingReservation.customer_phone}</p>
+                  <p><strong>料金：</strong>¥{editingReservation.price?.toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ボタン */}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleSaveEdit}
+                className="flex-1 px-4 py-3 bg-primary-green text-white rounded-lg hover:bg-green-600 transition font-bold"
+              >
+                保存
+              </button>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingReservation(null);
+                }}
+                className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-bold"
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

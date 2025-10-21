@@ -1,6 +1,6 @@
 import NewsSlider from '../components/NewsSlider';
 import { Link } from 'react-router-dom';
-import { FaMusic, FaDrum } from 'react-icons/fa';
+import { FaMusic, FaDrum, FaSearch } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
 export default function Home() {
@@ -9,6 +9,19 @@ export default function Home() {
       {/* ヒーローセクション - お知らせスライドショー */}
       <section className="container mx-auto px-4 py-8">
         <NewsSlider />
+      </section>
+
+      {/* 予約確認リンク */}
+      <section className="container mx-auto px-4 py-4">
+        <div className="max-w-md mx-auto">
+          <Link
+            to="/reservation/check"
+            className="flex items-center justify-center space-x-2 bg-white border-2 border-primary-green text-primary-green px-6 py-3 rounded-lg font-bold hover:bg-green-50 transition shadow-sm"
+          >
+            <FaSearch />
+            <span>予約確認・キャンセル</span>
+          </Link>
+        </div>
       </section>
 
       {/* スタジオ予約CTA */}

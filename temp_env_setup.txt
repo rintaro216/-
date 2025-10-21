@@ -1,0 +1,12 @@
+# 以下のコマンドを実行してください：
+
+npx vercel env add VITE_SUPABASE_URL production
+# 入力を求められたら以下を貼り付け：
+# https://ivdhvapmbyvdprykvpbd.supabase.co
+
+npx vercel env add VITE_SUPABASE_ANON_KEY production
+# 入力を求められたら以下を貼り付け：
+# eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2ZGh2YXBtYnl2ZHByeWt2cGJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzMjI2NTUsImV4cCI6MjA3NTg5ODY1NX0.kBR1dZFhppf9nO6iKCCS2o1qCFCIPbuK9ARxEcil510
+
+# 設定後、再デプロイ：
+npx vercel --prod

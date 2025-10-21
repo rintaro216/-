@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import { studioData } from '../data/studioData';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale/ja';
 import { createReservation } from '../services/reservationService';
+import { calculateSlots } from '../utils/timeUtils';
 
 export default function ReservationForm() {
   const navigate = useNavigate();
@@ -18,17 +19,22 @@ export default function ReservationForm() {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    email: '',
     agreedToTerms: false
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // スタジオ情報を取得
   const areaData = studioData[area];
   const studio = areaData?.studios.find(s => s.id === studioId);
-  const price = userType === 'student' ? studio?.pricing.student : studio?.pricing.general;
+  const pricePerSlot = userType === 'student' ? studio?.pricing.student : studio?.pricing.general;
+  const slots = calculateSlots(time);
+  const price = pricePerSlot * slots;
 
   const validate = () => {
     const newErrors = {};
@@ -39,10 +45,6 @@ export default function ReservationForm() {
 
     if (!formData.phone || !/^\d{10,11}$/.test(formData.phone.replace(/-/g, ''))) {
       newErrors.phone = '電話番号は10〜11桁の数字で入力してください';
-    }
-
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = '正しいメールアドレスを入力してください';
     }
 
     if (!formData.agreedToTerms) {
@@ -70,7 +72,6 @@ export default function ReservationForm() {
         userType,
         customerName: formData.name,
         customerPhone: formData.phone,
-        customerEmail: formData.email,
         price
       };
 
@@ -193,29 +194,6 @@ export default function ReservationForm() {
             />
             {errors.phone && (
               <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
-            )}
-          </div>
-
-          {/* メールアドレス */}
-          <div>
-            <label className="block text-sm font-bold mb-2">
-              メールアドレス（任意）
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:border-primary-orange transition ${
-                errors.email ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="example@example.com"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              ※予約確認メールを送信します（Phase 2以降）
-            </p>
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email}</p>
             )}
           </div>
 

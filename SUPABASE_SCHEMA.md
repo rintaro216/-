@@ -156,6 +156,53 @@ CREATE INDEX idx_news_published ON news(is_published, published_at);
 CREATE INDEX idx_news_category ON news(category);
 ```
 
+### 6. blocked_slots（ブロック時間帯テーブル）
+
+スタジオの特定時間帯をブロック（予約不可）にする管理テーブル
+
+```sql
+CREATE TABLE blocked_slots (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  -- ブロック対象
+  studio_id VARCHAR(50) NOT NULL REFERENCES studios(id) ON DELETE CASCADE,
+  blocked_date DATE NOT NULL,
+  start_time TIME NOT NULL,
+  end_time TIME NOT NULL,
+
+  -- ブロック理由
+  reason VARCHAR(255),
+  reason_category VARCHAR(50) CHECK (reason_category IN ('maintenance', 'event', 'private', 'other')) DEFAULT 'other',
+
+  -- メタデータ
+  created_by UUID,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+  -- 重複防止
+  CONSTRAINT no_duplicate_blocks UNIQUE (studio_id, blocked_date, start_time)
+);
+
+-- インデックス
+CREATE INDEX idx_blocked_slots_studio ON blocked_slots(studio_id);
+CREATE INDEX idx_blocked_slots_date ON blocked_slots(blocked_date);
+CREATE INDEX idx_blocked_slots_studio_date ON blocked_slots(studio_id, blocked_date);
+
+-- トリガー：updated_at自動更新
+CREATE OR REPLACE FUNCTION update_blocked_slots_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_blocked_slots_timestamp
+BEFORE UPDATE ON blocked_slots
+FOR EACH ROW
+EXECUTE FUNCTION update_blocked_slots_timestamp();
+```
+
 ---
 
 ## 🔐 Row Level Security (RLS)

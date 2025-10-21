@@ -1,9 +1,14 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaMusic, FaDrum, FaArrowLeft } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
 export default function AreaSelect() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleAreaSelect = (area) => {
     navigate(`/reserve/date?area=${area}`);

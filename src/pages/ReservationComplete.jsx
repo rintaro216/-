@@ -1,12 +1,17 @@
+import { useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { studioData } from '../data/studioData';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale/ja';
-import { FaCheckCircle, FaHome, FaCalendarPlus } from 'react-icons/fa';
+import { FaCheckCircle, FaHome, FaCalendarPlus, FaSearch } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
 export default function ReservationComplete() {
   const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const reservationId = searchParams.get('reservationId');
   const area = searchParams.get('area');
   const date = searchParams.get('date');
@@ -51,11 +56,14 @@ export default function ReservationComplete() {
         transition={{ delay: 0.3, duration: 0.5 }}
       >
         <p className="text-sm mb-2">予約番号</p>
-        <p className="text-2xl md:text-3xl font-bold tracking-wider">
+        <p className="text-4xl md:text-5xl font-bold tracking-widest font-mono">
           {reservationId}
         </p>
-        <p className="text-xs mt-2 opacity-90">
+        <p className="text-xs mt-3 opacity-90">
           当日、受付でこの番号をお伝えください
+        </p>
+        <p className="text-xs mt-1 opacity-75">
+          キャンセル時もこの番号が必要です
         </p>
       </motion.div>
 
@@ -148,7 +156,7 @@ export default function ReservationComplete() {
           </li>
           <li className="flex items-start">
             <span className="mr-2">•</span>
-            <span>キャンセルは前日までにお電話でお願いします（052-836-0811）</span>
+            <span>キャンセルは予約日の24時間前まで可能です（下記ボタンから）</span>
           </li>
         </ul>
       </motion.div>
@@ -160,23 +168,19 @@ export default function ReservationComplete() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.7, duration: 0.5 }}
       >
-        <Link to="/" className="block">
+        <Link to="/reservation/check" className="block">
           <button className="btn-primary w-full text-lg py-4 flex items-center justify-center">
+            <FaSearch className="mr-2" />
+            予約確認・キャンセル
+          </button>
+        </Link>
+
+        <Link to="/" className="block">
+          <button className="btn-secondary w-full text-lg py-4 flex items-center justify-center">
             <FaHome className="mr-2" />
             ホームに戻る
           </button>
         </Link>
-
-        <button
-          onClick={() => {
-            // カレンダーに追加する機能（Phase 2以降で実装）
-            alert('カレンダー追加機能はPhase 2で実装予定です');
-          }}
-          className="btn-secondary w-full text-lg py-4 flex items-center justify-center"
-        >
-          <FaCalendarPlus className="mr-2" />
-          カレンダーに追加
-        </button>
       </motion.div>
 
       {/* フッター情報 */}

@@ -9,10 +9,14 @@ import StudioSelect from './pages/StudioSelect'
 import UserTypeSelect from './pages/UserTypeSelect'
 import ReservationForm from './pages/ReservationForm'
 import ReservationComplete from './pages/ReservationComplete'
+import ReservationCheck from './pages/user/ReservationCheck'
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import ReservationManagement from './pages/admin/ReservationManagement'
+import StudioManagementUnified from './pages/admin/StudioManagementUnified'
 import StudioManagement from './pages/admin/StudioManagement'
+import BusinessHoursManagement from './pages/admin/BusinessHoursManagement'
+import AnnouncementManagement from './pages/admin/AnnouncementManagement'
 
 function App() {
   const location = useLocation();
@@ -33,6 +37,9 @@ function App() {
           <Route path="/reserve/user-type" element={<UserTypeSelect />} />
           <Route path="/reserve/form" element={<ReservationForm />} />
           <Route path="/reserve/complete" element={<ReservationComplete />} />
+
+          {/* 予約確認・キャンセル */}
+          <Route path="/reservation/check" element={<ReservationCheck />} />
 
           {/* 管理画面 */}
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -56,7 +63,23 @@ function App() {
             path="/admin/studios"
             element={
               <ProtectedRoute>
-                <StudioManagement />
+                <StudioManagementUnified />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/business-hours"
+            element={
+              <ProtectedRoute>
+                <BusinessHoursManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/announcements"
+            element={
+              <ProtectedRoute>
+                <AnnouncementManagement />
               </ProtectedRoute>
             }
           />

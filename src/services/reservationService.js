@@ -3,33 +3,52 @@ import { format } from 'date-fns';
 
 /**
  * 予約番号を生成する
- * フォーマット: OP-YYYYMMDD-XXX
+ * フォーマット: 6文字の英数字（例: A3K8M2）
  */
 export const generateReservationNumber = async (date) => {
-  const dateStr = format(new Date(date), 'yyyyMMdd');
+  // 英数字（大文字のみ、紛らわしい文字を除外）
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // I, O, 0, 1 を除外
+
+  const generateCode = () => {
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  };
 
   if (!isSupabaseConfigured()) {
     // ダミー予約番号（Supabase未設定時）
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `OP-${dateStr}-${random}`;
+    return generateCode();
   }
 
   try {
-    // 同じ日付の予約数を取得
-    const { count, error } = await supabase
-      .from('reservations')
-      .select('*', { count: 'exact', head: true })
-      .eq('reservation_date', date);
+    // ユニークな予約番号を生成（最大10回試行）
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const code = generateCode();
 
-    if (error) throw error;
+      // 既存の予約番号と重複チェック
+      const { data, error } = await supabase
+        .from('reservations')
+        .select('reservation_number')
+        .eq('reservation_number', code)
+        .maybeSingle();
 
-    const nextNumber = ((count || 0) + 1).toString().padStart(3, '0');
-    return `OP-${dateStr}-${nextNumber}`;
+      if (error) throw error;
+
+      // 重複がなければそのコードを返す
+      if (!data) {
+        return code;
+      }
+    }
+
+    // 10回試行しても重複した場合（稀）、タイムスタンプを含める
+    const timestamp = Date.now().toString(36).toUpperCase().slice(-2);
+    return generateCode().slice(0, 4) + timestamp;
   } catch (error) {
     console.error('予約番号生成エラー:', error);
     // エラー時はランダム生成
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `OP-${dateStr}-${random}`;
+    return generateCode();
   }
 };
 
@@ -68,9 +87,20 @@ export const checkAvailability = async (area, date, timeRange) => {
 
     if (studioError) throw studioError;
 
+    // ブロックされているスタジオIDを取得
+    const { data: blockedSlots, error: blockedError } = await supabase
+      .from('blocked_slots')
+      .select('studio_id')
+      .eq('blocked_date', date)
+      .lte('start_time', startTime + ':00')
+      .gt('end_time', startTime + ':00');
+
+    if (blockedError) throw blockedError;
+
     const total = studios?.length || 0;
     const occupied = reservations?.length || 0;
-    const available = total - occupied;
+    const blocked = blockedSlots?.length || 0;
+    const available = total - occupied - blocked;
 
     let status = 'available';
     if (available === 0) status = 'occupied';
@@ -89,19 +119,32 @@ export const checkAvailability = async (area, date, timeRange) => {
 };
 
 /**
- * 特定日時の各時間帯の空室状況を一括取得
+ * 特定日時の各時間帯の空室状況を一括取得（30分単位）
  */
 export const getAvailabilityByDate = async (area, date) => {
   const timeSlots = [
-    '10:00-11:00',
-    '11:00-12:00',
-    '13:00-14:00',
-    '14:00-15:00',
-    '15:00-16:00',
-    '16:00-17:00',
-    '17:00-18:00',
-    '18:00-19:00',
-    '19:00-20:00',
+    '10:00-10:30',
+    '10:30-11:00',
+    '11:00-11:30',
+    '11:30-12:00',
+    '13:00-13:30',
+    '13:30-14:00',
+    '14:00-14:30',
+    '14:30-15:00',
+    '15:00-15:30',
+    '15:30-16:00',
+    '16:00-16:30',
+    '16:30-17:00',
+    '17:00-17:30',
+    '17:30-18:00',
+    '18:00-18:30',
+    '18:30-19:00',
+    '19:00-19:30',
+    '19:30-20:00',
+    '20:00-20:30',
+    '20:30-21:00',
+    '21:00-21:30',
+    '21:30-22:00',
   ];
 
   if (!isSupabaseConfigured()) {
@@ -167,6 +210,26 @@ export const createReservation = async (reservationData) => {
 
   try {
     const [startTime, endTime] = timeRange.split('-');
+
+    // ブロックチェック：このスタジオ・日時がブロックされていないか確認
+    const { data: blockedCheck, error: blockError } = await supabase
+      .from('blocked_slots')
+      .select('id')
+      .eq('studio_id', studioId)
+      .eq('blocked_date', date)
+      .lte('start_time', startTime + ':00')
+      .gt('end_time', startTime + ':00')
+      .limit(1);
+
+    if (blockError) throw blockError;
+
+    if (blockedCheck && blockedCheck.length > 0) {
+      return {
+        success: false,
+        error: 'BLOCKED_SLOT',
+        message: 'この時間帯は予約できません（ブロック中）'
+      };
+    }
 
     const { data, error } = await supabase
       .from('reservations')

@@ -27,6 +27,10 @@ export default {
       spacing: {
         '18': '4.5rem',
         '88': '22rem',
+      },
+      gridTemplateColumns: {
+        '13': 'repeat(13, minmax(0, 1fr))',
+        '26': 'repeat(26, minmax(0, 1fr))',
       }
     },
   },
