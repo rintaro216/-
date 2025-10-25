@@ -38,12 +38,9 @@ export const initializeLiff = async () => {
       return { success: false, isLiffEnvironment: false };
     }
 
-    // LIFF SDKをロード
-    liff = await loadLiffSDK();
-
-    // 既に初期化済みの場合は、現在の状態を返す
+    // 既に初期化済みの場合は、現在の状態を返す（SDKロード前にチェック！）
     if (isLiffInitialized && liff) {
-      console.log('LIFF は既に初期化済みです');
+      console.log('✅ LIFF は既に初期化済みです - 再初期化をスキップ');
       return {
         success: true,
         isLiffEnvironment: liff.isInClient(),
@@ -51,14 +48,22 @@ export const initializeLiff = async () => {
       };
     }
 
-    // LIFF初期化
-    await liff.init({ liffId: LIFF_ID });
+    console.log('🔄 LIFF SDKをロード中...');
+    // LIFF SDKをロード（初期化が必要な場合のみ）
+    liff = await loadLiffSDK();
+
+    console.log('🔄 LIFFを初期化中...');
+    // LIFF初期化（自動ログインを無効化）
+    await liff.init({
+      liffId: LIFF_ID,
+      withLoginOnExternalBrowser: false  // 外部ブラウザでの自動ログインを無効化
+    });
     isLiffInitialized = true;
 
     // LINEアプリ内かどうかを確認
     const isInClient = liff.isInClient();
 
-    console.log('LIFF初期化成功', {
+    console.log('✅ LIFF初期化成功', {
       isInClient,
       isLoggedIn: liff.isLoggedIn()
     });
@@ -69,7 +74,7 @@ export const initializeLiff = async () => {
       isLoggedIn: liff.isLoggedIn()
     };
   } catch (error) {
-    console.error('LIFF初期化エラー:', error);
+    console.error('❌ LIFF初期化エラー:', error);
     return {
       success: false,
       isLiffEnvironment: false,
