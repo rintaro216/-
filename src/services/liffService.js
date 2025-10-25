@@ -98,6 +98,72 @@ export const loginWithLiff = () => {
 };
 
 /**
+ * Web版からLINE連携するためのログイン
+ * @param {string} redirectUrl - ログイン後にリダイレクトするURL（省略可）
+ */
+export const loginForLineLink = async (redirectUrl) => {
+  try {
+    console.log('🔐 LINE連携ログインを開始...');
+
+    if (!liff) {
+      console.log('🔄 LIFFを初期化中...');
+      await initializeLiff();
+    }
+
+    if (!liff) {
+      throw new Error('LIFFの初期化に失敗しました');
+    }
+
+    // 既にログイン済みの場合はプロフィールを取得して返す
+    if (liff.isLoggedIn()) {
+      console.log('✅ 既にLINEにログインしています');
+      const profile = await getLineProfile();
+      return {
+        success: true,
+        profile,
+        userId: profile?.userId
+      };
+    }
+
+    // ログインを実行（認証後に現在のURLまたは指定されたURLに戻る）
+    const currentUrl = redirectUrl || window.location.href;
+    console.log('🔄 LINEログインページにリダイレクト...', { redirectTo: currentUrl });
+
+    liff.login({ redirectUri: currentUrl });
+
+    return {
+      success: true,
+      redirecting: true
+    };
+  } catch (error) {
+    console.error('❌ LINE連携ログインエラー:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
+/**
+ * LINEログイン状態を確認
+ * @returns {boolean} ログインしているかどうか
+ */
+export const isLoggedIn = () => {
+  if (!liff) return false;
+  return liff.isLoggedIn();
+};
+
+/**
+ * LINEからログアウト
+ */
+export const logoutFromLine = () => {
+  if (liff && liff.isLoggedIn()) {
+    liff.logout();
+    window.location.reload();
+  }
+};
+
+/**
  * LINE User IDを取得
  * @returns {Promise<string|null>} LINE User ID
  */
