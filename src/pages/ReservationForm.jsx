@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale/ja';
 import { createReservation } from '../services/reservationService';
 import { calculateSlots } from '../utils/timeUtils';
-import { initializeLiff, getLineUserId, getLineProfile, isInLineApp } from '../services/liffService';
+import { useLiff } from '../contexts/LiffContext';
 
 export default function ReservationForm() {
   const navigate = useNavigate();
@@ -16,6 +16,8 @@ export default function ReservationForm() {
   const time = searchParams.get('time');
   const studioId = searchParams.get('studio');
   const userType = searchParams.get('userType');
+
+  const { isLiffReady, isInLiff, liffProfile, lineUserId } = useLiff();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -27,49 +29,27 @@ export default function ReservationForm() {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLiffInitialized, setIsLiffInitialized] = useState(false);
-  const [isInLiff, setIsInLiff] = useState(false);
-  const [liffProfile, setLiffProfile] = useState(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  // LIFF初期化
+  // LIFF環境でユーザー情報を自動設定
   useEffect(() => {
-    const initLiff = async () => {
-      const result = await initializeLiff();
+    if (isLiffReady && isInLiff && liffProfile && lineUserId) {
+      setFormData(prev => ({
+        ...prev,
+        name: liffProfile.displayName || prev.name,
+        lineUserId: lineUserId,
+        receiveLineNotification: true
+      }));
 
-      if (result.success && result.isLiffEnvironment) {
-        setIsLiffInitialized(true);
-        setIsInLiff(true);
-
-        // LINEユーザープロフィールを取得
-        const profile = await getLineProfile();
-        const userId = await getLineUserId();
-
-        if (profile && userId) {
-          setLiffProfile(profile);
-          setFormData(prev => ({
-            ...prev,
-            name: profile.displayName || prev.name,
-            lineUserId: userId,
-            receiveLineNotification: true
-          }));
-
-          console.log('LIFF経由でユーザー情報を自動設定:', {
-            displayName: profile.displayName,
-            userId: userId
-          });
-        }
-      } else {
-        setIsLiffInitialized(true);
-        setIsInLiff(false);
-      }
-    };
-
-    initLiff();
-  }, []);
+      console.log('✅ LIFF経由でユーザー情報を自動設定:', {
+        displayName: liffProfile.displayName,
+        userId: lineUserId
+      });
+    }
+  }, [isLiffReady, isInLiff, liffProfile, lineUserId]);
 
 
   // スタジオ情報を取得
