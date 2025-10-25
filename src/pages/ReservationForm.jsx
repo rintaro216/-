@@ -7,6 +7,7 @@ import { ja } from 'date-fns/locale/ja';
 import { createReservation } from '../services/reservationService';
 import { calculateSlots } from '../utils/timeUtils';
 import { useLiff } from '../contexts/LiffContext';
+import { loginForLineLink, getLineUserId, getLineProfile, isLoggedIn } from '../services/liffService';
 
 export default function ReservationForm() {
   const navigate = useNavigate();
@@ -29,6 +30,8 @@ export default function ReservationForm() {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConnectingLine, setIsConnectingLine] = useState(false);
+  const [webLineProfile, setWebLineProfile] = useState(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -50,6 +53,30 @@ export default function ReservationForm() {
       });
     }
   }, [isLiffReady, isInLiff, liffProfile, lineUserId]);
+
+  // Web版でLINEログイン後にUser IDを取得
+  useEffect(() => {
+    const checkWebLineLogin = async () => {
+      if (!isInLiff && isLiffReady && isLoggedIn()) {
+        const userId = await getLineUserId();
+        const profile = await getLineProfile();
+        
+        if (userId && profile) {
+          setWebLineProfile(profile);
+          setFormData(prev => ({
+            ...prev,
+            name: prev.name || profile.displayName,
+            lineUserId: userId,
+            receiveLineNotification: true
+          }));
+          console.log('✅ Web版でLINE連携成功:', { userId, displayName: profile.displayName });
+        }
+      }
+    };
+
+    checkWebLineLogin();
+  }, [isLiffReady, isInLiff]);
+
 
 
   // スタジオ情報を取得
@@ -114,6 +141,30 @@ export default function ReservationForm() {
       setErrors({ submit: '予約の作成中にエラーが発生しました' });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+
+  // LINE連携ボタンのハンドラー
+  const handleLineConnect = async () => {
+    setIsConnectingLine(true);
+    try {
+      const result = await loginForLineLink();
+      
+      if (result.success && !result.redirecting) {
+        setWebLineProfile(result.profile);
+        setFormData(prev => ({
+          ...prev,
+          name: prev.name || result.profile.displayName,
+          lineUserId: result.userId,
+          receiveLineNotification: true
+        }));
+      }
+    } catch (error) {
+      console.error('LINE連携エラー:', error);
+      alert('LINE連携に失敗しました。もう一度お試しください。');
+    } finally {
+      setIsConnectingLine(false);
     }
   };
 
@@ -252,6 +303,25 @@ export default function ReservationForm() {
                       予約完了・キャンセル・前日リマインダーがLINEに自動送信されます
                     </p>
                   </div>
+                ) : webLineProfile ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2 bg-white rounded-lg p-3 border border-green-300">
+                      {webLineProfile.pictureUrl && (
+                        <img
+                          src={webLineProfile.pictureUrl}
+                          alt={webLineProfile.displayName}
+                          className="w-10 h-10 rounded-full"
+                        />
+                      )}
+                      <div>
+                        <p className="font-bold text-sm text-green-700">✓ LINE連携済み</p>
+                        <p className="text-xs text-gray-600">{webLineProfile.displayName}</p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-700">
+                      予約完了・キャンセル・前日リマインダーがLINEに自動送信されます
+                    </p>
+                  </div>
                 ) : (
                   <>
                     <label className="flex items-start space-x-2 cursor-pointer mb-3">
@@ -268,33 +338,23 @@ export default function ReservationForm() {
                     </label>
                     {formData.receiveLineNotification && (
                       <div className="pl-7 space-y-3">
-                        <p className="text-sm text-gray-600">
-                          ※ まず下のボタンから公式LINEを友だち追加してください
+                        <p className="text-sm text-gray-600 font-bold">
+                          ワンクリックでLINE連携（推奨）
                         </p>
-                        <a
-                          href="https://line.me/R/ti/p/@YOUR_LINE_ID"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm font-bold"
+                        <button
+                          type="button"
+                          onClick={handleLineConnect}
+                          disabled={isConnectingLine}
+                          className="flex items-center space-x-2 px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition font-bold disabled:bg-gray-300 disabled:cursor-not-allowed"
                         >
-                          おんぷタイム公式LINEを追加
-                        </a>
-                        <div className="mt-3">
-                          <label className="block text-sm font-bold mb-2">
-                            LINE User ID（任意）
-                          </label>
-                          <input
-                            type="text"
-                            name="lineUserId"
-                            value={formData.lineUserId}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500 transition"
-                            placeholder="友だち追加後、トークで「ID確認」と送信してください"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            ※ LINE User IDの取得方法：公式LINEを友だち追加し、トークで「ID確認」と送信すると自動返信されます
-                          </p>
-                        </div>
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
+                          </svg>
+                          <span>{isConnectingLine ? '連携中...' : 'LINEと連携する'}</span>
+                        </button>
+                        <p className="text-xs text-gray-500">
+                          ※ LINEログイン画面が開きます。承認後、自動的に戻ってきます
+                        </p>
                       </div>
                     )}
                   </>
