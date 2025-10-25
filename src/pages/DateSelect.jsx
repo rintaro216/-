@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, isBefore, startOfToday, addMonths, subMonths } from 'date-fns';
+import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, isBefore, startOfToday, addMonths, subMonths, getDay } from 'date-fns';
 import { ja } from 'date-fns/locale/ja';
 import { FaArrowLeft, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { getAvailabilityByDate } from '../services/reservationService';
@@ -23,6 +23,12 @@ export default function DateSelect() {
   const monthEnd = endOfMonth(currentMonth);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
   const today = startOfToday();
+
+  // 月の最初の日の曜日を取得（月曜始まり: 月=0, 火=1, ..., 日=6）
+  const startDayOfWeek = (getDay(monthStart) + 6) % 7; // 日曜=0を月曜=0に変換
+
+  // カレンダーグリッド用の空白セルを生成
+  const emptyDays = Array(startDayOfWeek).fill(null);
 
   // 月の切り替え
   const handlePrevMonth = () => {
@@ -213,6 +219,12 @@ export default function DateSelect() {
         </div>
 
         <div className="grid grid-cols-7 gap-1 md:gap-2">
+          {/* 空白セル */}
+          {emptyDays.map((_, index) => (
+            <div key={`empty-${index}`} className="p-2 md:p-3"></div>
+          ))}
+
+          {/* 日付セル */}
           {daysInMonth.map((day) => {
             const isPast = isPastDate(day);
             const isSelected = isSameDay(day, selectedDate);
