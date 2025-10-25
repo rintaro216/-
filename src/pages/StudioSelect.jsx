@@ -16,6 +16,7 @@ export default function StudioSelect() {
 
   const [blockedStudioIds, setBlockedStudioIds] = useState([]);
   const [reservedStudioIds, setReservedStudioIds] = useState([]);
+  const [inactiveStudioIds, setInactiveStudioIds] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const areaData = studioData[area];
@@ -52,8 +53,16 @@ export default function StudioSelect() {
         .eq('start_time', startTime + ':00')
         .eq('status', 'confirmed');
 
+      // 休止中のスタジオを取得
+      const { data: inactive } = await supabase
+        .from('studios')
+        .select('id')
+        .eq('area', area)
+        .eq('is_active', false);
+
       setBlockedStudioIds(blocked?.map(b => b.studio_id) || []);
       setReservedStudioIds(reserved?.map(r => r.studio_id) || []);
+      setInactiveStudioIds(inactive?.map(i => i.id) || []);
     } catch (error) {
       console.error('ブロック・予約情報取得エラー:', error);
     } finally {
@@ -100,7 +109,8 @@ export default function StudioSelect() {
           {areaData.studios.map((studio) => {
             const isBlocked = blockedStudioIds.includes(studio.id);
             const isReserved = reservedStudioIds.includes(studio.id);
-            const isAvailable = !isBlocked && !isReserved;
+            const isInactive = inactiveStudioIds.includes(studio.id);
+            const isAvailable = !isBlocked && !isReserved && !isInactive;
 
             return (
               <div
@@ -126,9 +136,15 @@ export default function StudioSelect() {
                           <span>ブロック中</span>
                         </span>
                       )}
-                      {isReserved && !isBlocked && (
+                      {isReserved && !isBlocked && !isInactive && (
                         <span className="px-3 py-1 bg-gray-500 text-white text-sm font-bold rounded">
                           予約済み
+                        </span>
+                      )}
+                      {isInactive && !isBlocked && !isReserved && (
+                        <span className="flex items-center space-x-1 px-3 py-1 bg-orange-500 text-white text-sm font-bold rounded">
+                          <FaBan />
+                          <span>休止中</span>
                         </span>
                       )}
                     </div>
