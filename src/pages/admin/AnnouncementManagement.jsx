@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale/ja';
 import { FaPlus, FaEdit, FaTrash, FaEye, FaEyeSlash, FaArrowLeft } from 'react-icons/fa';
 import ImageUpload from '../../components/ImageUpload';
+import { sendAnnouncementToGroup } from '../../services/lineNotificationService';
 
 export default function AnnouncementManagement() {
   const navigate = useNavigate();
@@ -147,6 +148,19 @@ export default function AnnouncementManagement() {
           .insert([dataToSave]);
 
         if (error) throw error;
+
+        // 新規作成時、公開状態ならLINE通知を送信
+        if (dataToSave.is_published) {
+          sendAnnouncementToGroup({
+            title: dataToSave.title,
+            content: dataToSave.content,
+            image_url: dataToSave.image_url
+          }).catch(err => {
+            console.error('LINE通知送信エラー:', err);
+            // エラーでもお知らせ作成は成功として扱う
+          });
+        }
+
         alert('お知らせを作成しました');
       }
 
@@ -178,12 +192,27 @@ export default function AnnouncementManagement() {
 
   const togglePublish = async (announcement) => {
     try {
+      const newPublishState = !announcement.is_published;
+
       const { error } = await supabase
         .from('announcements')
-        .update({ is_published: !announcement.is_published })
+        .update({ is_published: newPublishState })
         .eq('id', announcement.id);
 
       if (error) throw error;
+
+      // 非公開→公開に変更した場合、LINE通知を送信
+      if (newPublishState) {
+        sendAnnouncementToGroup({
+          title: announcement.title,
+          content: announcement.content,
+          image_url: announcement.image_url
+        }).catch(err => {
+          console.error('LINE通知送信エラー:', err);
+          // エラーでも公開は成功として扱う
+        });
+      }
+
       fetchAnnouncements();
     } catch (error) {
       console.error('公開状態の変更エラー:', error);
@@ -388,7 +417,7 @@ export default function AnnouncementManagement() {
                       onChange={handleChange}
                       className="w-5 h-5"
                     />
-                    <span className="text-sm font-bold">公開する</span>
+                    <span className="text-sm font-bold">公開する（公開すると登録ユーザーにLINE通知が送信されます）</span>
                   </label>
                 </div>
 

@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale/ja';
-import { FaArrowLeft, FaSearch, FaTrash, FaCalendarAlt, FaClock, FaMusic, FaUser, FaPhone, FaEdit, FaTimes, FaEye, FaEnvelope, FaFileExport } from 'react-icons/fa';
+import { FaArrowLeft, FaSearch, FaTrash, FaCalendarAlt, FaClock, FaMusic, FaUser, FaPhone, FaEdit, FaTimes, FaEye, FaEnvelope, FaFileExport, FaPlus } from 'react-icons/fa';
+import { sendReservationConfirmation } from '../../services/lineNotificationService';
+import { createReservation } from '../../services/reservationService';
 
 export default function ReservationManagement() {
   const navigate = useNavigate();
@@ -16,6 +18,19 @@ export default function ReservationManagement() {
   const [filterArea, setFilterArea] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [editingReservation, setEditingReservation] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newReservation, setNewReservation] = useState({
+    area: 'onpukan',
+    studio_id: '',
+    reservation_date: '',
+    start_time: '10:00',
+    end_time: '11:00',
+    customer_name: '',
+    customer_phone: '',
+    user_type: 'general',
+    line_user_id: '',
+    price: 0
+  });
   const [showEditModal, setShowEditModal] = useState(false);
   const [viewingReservation, setViewingReservation] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -145,6 +160,92 @@ export default function ReservationManagement() {
   const handleEditReservation = (reservation) => {
     setEditingReservation({...reservation});
     setShowEditModal(true);
+  };
+
+
+  const handleOpenCreateModal = () => {
+    setNewReservation({
+      area: 'onpukan',
+      studio_id: studios.find(s => s.area === 'onpukan')?.id || '',
+      reservation_date: '',
+      start_time: '10:00',
+      end_time: '11:00',
+      customer_name: '',
+      customer_phone: '',
+      user_type: 'general',
+      line_user_id: '',
+      price: 0
+    });
+    setShowCreateModal(true);
+  };
+
+  const handleCreateReservation = async () => {
+    if (!newReservation.customer_name || !newReservation.customer_phone || !newReservation.reservation_date) {
+      alert('必須項目を入力してください');
+      return;
+    }
+
+    try {
+      const result = await createReservation({
+        area: newReservation.area,
+        studioId: newReservation.studio_id,
+        date: newReservation.reservation_date,
+        timeRange: `${newReservation.start_time}-${newReservation.end_time}`,
+        userType: newReservation.user_type,
+        customerName: newReservation.customer_name,
+        customerPhone: newReservation.customer_phone,
+        lineUserId: newReservation.line_user_id || null,
+        price: newReservation.price
+      });
+
+      if (result.success) {
+        alert(`予約を作成しました（予約番号: ${result.reservationNumber}）`);
+        setShowCreateModal(false);
+        fetchReservations();
+      } else {
+        alert(`予約の作成に失敗しました: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('予約作成エラー:', error);
+      alert('予約の作成に失敗しました');
+    }
+  };
+
+  const calculatePrice = (startTime, endTime, userType, area, studioId) => {
+    const start = new Date(`2000-01-01 ${startTime}`);
+    const end = new Date(`2000-01-01 ${endTime}`);
+    const hours = (end - start) / (1000 * 60 * 60);
+
+    const studio = studios.find(s => s.id === studioId);
+    if (!studio) return 0;
+
+    const rate = userType === 'student' ? studio.student_rate : studio.general_rate;
+    return Math.round(rate * hours);
+  };
+
+  const handleNewReservationChange = (field, value) => {
+    setNewReservation(prev => {
+      const updated = { ...prev, [field]: value };
+
+      // エリアが変更された場合、そのエリアの最初のスタジオを選択
+      if (field === 'area') {
+        const firstStudio = studios.find(s => s.area === value && s.is_active);
+        updated.studio_id = firstStudio?.id || '';
+      }
+
+      // 料金を再計算
+      if (['start_time', 'end_time', 'user_type', 'studio_id'].includes(field)) {
+        updated.price = calculatePrice(
+          updated.start_time,
+          updated.end_time,
+          updated.user_type,
+          updated.area,
+          updated.studio_id
+        );
+      }
+
+      return updated;
+    });
   };
 
   const handleSaveEdit = async () => {
@@ -340,6 +441,13 @@ export default function ReservationManagement() {
               >
                 <FaFileExport className="mr-2" />
                 CSVエクスポート
+              </button>
+              <button
+                onClick={handleOpenCreateModal}
+                className="px-4 py-2 bg-primary-orange text-white rounded-lg hover:bg-orange-600 transition flex items-center"
+              >
+                <FaPlus className="mr-2" />
+                新規予約作成
               </button>
               <button
                 onClick={fetchReservations}
@@ -709,6 +817,164 @@ export default function ReservationManagement() {
                   setShowEditModal(false);
                   setEditingReservation(null);
                 }}
+                className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-bold"
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* 新規作成モーダル */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">新規予約作成（管理者用）</h2>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <FaTimes size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* エリア選択 */}
+              <div>
+                <label className="block text-sm font-bold mb-2">エリア <span className="text-red-500">*</span></label>
+                <select
+                  value={newReservation.area}
+                  onChange={(e) => handleNewReservationChange('area', e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary-green"
+                >
+                  <option value="onpukan">おんぷ館</option>
+                  <option value="midori">みどり楽器</option>
+                </select>
+              </div>
+
+              {/* スタジオ選択 */}
+              <div>
+                <label className="block text-sm font-bold mb-2">スタジオ <span className="text-red-500">*</span></label>
+                <select
+                  value={newReservation.studio_id}
+                  onChange={(e) => handleNewReservationChange('studio_id', e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary-green"
+                >
+                  {studios
+                    .filter(s => s.area === newReservation.area && s.is_active)
+                    .map(studio => (
+                      <option key={studio.id} value={studio.id}>
+                        {studio.display_name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {/* 日付 */}
+              <div>
+                <label className="block text-sm font-bold mb-2">予約日 <span className="text-red-500">*</span></label>
+                <input
+                  type="date"
+                  value={newReservation.reservation_date}
+                  onChange={(e) => handleNewReservationChange('reservation_date', e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary-green"
+                />
+              </div>
+
+              {/* 時間 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold mb-2">開始時刻 <span className="text-red-500">*</span></label>
+                  <input
+                    type="time"
+                    value={newReservation.start_time}
+                    onChange={(e) => handleNewReservationChange('start_time', e.target.value)}
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary-green"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold mb-2">終了時刻 <span className="text-red-500">*</span></label>
+                  <input
+                    type="time"
+                    value={newReservation.end_time}
+                    onChange={(e) => handleNewReservationChange('end_time', e.target.value)}
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary-green"
+                  />
+                </div>
+              </div>
+
+              {/* 顧客情報 */}
+              <div>
+                <label className="block text-sm font-bold mb-2">顧客名 <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  value={newReservation.customer_name}
+                  onChange={(e) => handleNewReservationChange('customer_name', e.target.value)}
+                  placeholder="山田太郎"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary-green"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold mb-2">電話番号 <span className="text-red-500">*</span></label>
+                <input
+                  type="tel"
+                  value={newReservation.customer_phone}
+                  onChange={(e) => handleNewReservationChange('customer_phone', e.target.value)}
+                  placeholder="090-1234-5678"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary-green"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold mb-2">LINE User ID（任意）</label>
+                <input
+                  type="text"
+                  value={newReservation.line_user_id}
+                  onChange={(e) => handleNewReservationChange('line_user_id', e.target.value)}
+                  placeholder="LINE通知を送信する場合は入力"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary-green"
+                />
+                <p className="text-xs text-gray-500 mt-1">※入力するとLINEで予約通知が送信されます</p>
+              </div>
+
+              {/* 利用者区分 */}
+              <div>
+                <label className="block text-sm font-bold mb-2">利用者区分</label>
+                <select
+                  value={newReservation.user_type}
+                  onChange={(e) => handleNewReservationChange('user_type', e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary-green"
+                >
+                  <option value="general">一般</option>
+                  <option value="student">学生</option>
+                </select>
+              </div>
+
+              {/* 料金表示 */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-gray-700">料金</span>
+                  <span className="text-2xl font-bold text-primary-orange">
+                    ¥{newReservation.price.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* ボタン */}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleCreateReservation}
+                className="flex-1 px-4 py-3 bg-primary-green text-white rounded-lg hover:bg-green-600 transition font-bold"
+              >
+                予約を作成
+              </button>
+              <button
+                onClick={() => setShowCreateModal(false)}
                 className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-bold"
               >
                 キャンセル

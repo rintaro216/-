@@ -22,3 +22,23 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables
+.env
+
+# Test and temporary files
+*.cjs
+test_*.js
+*.backup
+*.broken
+*.original
+temp_*.js
+update_*.js
+check_*.cjs
+write_*.cjs
+run_*.js
+create_*.js
+get_*.js
+nul
+DEVELOPMENT_PROGRESS.md
+LINE_SETUP_GUIDE.md

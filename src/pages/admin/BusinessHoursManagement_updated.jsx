@@ -214,7 +214,7 @@ export default function BusinessHoursManagement({ embedded = false }) {
       }
 
       setStudioAvailability(newAvailability);
-      // リロードせずに状態のみ更新（ドラッグ操作を可能にするため）
+      await fetchData(); // ブロック一覧を再取得
     } catch (error) {
       console.error('時間帯切り替えエラー:', error);
       alert('時間帯の切り替えに失敗しました');

@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { sendReservationConfirmation, sendCancellationNotification } from './lineNotificationService';
 import { format } from 'date-fns';
 
 /**
@@ -191,7 +192,7 @@ export const createReservation = async (reservationData) => {
     userType,
     customerName,
     customerPhone,
-    customerEmail,
+    lineUserId,
     price
   } = reservationData;
 
@@ -244,7 +245,7 @@ export const createReservation = async (reservationData) => {
           user_type: userType,
           customer_name: customerName,
           customer_phone: customerPhone,
-          customer_email: customerEmail || null,
+          line_user_id: lineUserId || null,
           price: price,
           status: 'confirmed'
         }
@@ -253,6 +254,22 @@ export const createReservation = async (reservationData) => {
       .single();
 
     if (error) throw error;
+
+    // LINE通知を送信（非同期で実行、エラーでも予約は成功扱い）
+    if (lineUserId) {
+      sendReservationConfirmation(lineUserId, {
+        reservation_number: reservationNumber,
+        reservation_date: date,
+        start_time: startTime + ':00',
+        end_time: endTime + ':00',
+        studio_id: studioId,
+        area,
+        customer_name: customerName,
+        price
+      }).catch(err => {
+        console.error('LINE通知送信エラー:', err);
+      });
+    }
 
     return {
       success: true,
@@ -294,6 +311,18 @@ export const cancelReservation = async (reservationNumber) => {
       .single();
 
     if (error) throw error;
+
+    // LINE通知を送信（非同期で実行）
+    if (data.line_user_id) {
+      sendCancellationNotification(data.line_user_id, {
+        reservation_number: data.reservation_number,
+        reservation_date: data.reservation_date,
+        start_time: data.start_time,
+        customer_name: data.customer_name
+      }).catch(err => {
+        console.error('LINE通知送信エラー:', err);
+      });
+    }
 
     return {
       success: true,
