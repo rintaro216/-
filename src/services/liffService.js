@@ -7,6 +7,7 @@
 const LIFF_ID = import.meta.env.VITE_LIFF_ID;
 
 let liff = null;
+let isLiffInitialized = false;
 
 /**
  * LIFF SDKを動的にロード
@@ -40,8 +41,19 @@ export const initializeLiff = async () => {
     // LIFF SDKをロード
     liff = await loadLiffSDK();
 
+    // 既に初期化済みの場合は、現在の状態を返す
+    if (isLiffInitialized && liff) {
+      console.log('LIFF は既に初期化済みです');
+      return {
+        success: true,
+        isLiffEnvironment: liff.isInClient(),
+        isLoggedIn: liff.isLoggedIn()
+      };
+    }
+
     // LIFF初期化
     await liff.init({ liffId: LIFF_ID });
+    isLiffInitialized = true;
 
     // LINEアプリ内かどうかを確認
     const isInClient = liff.isInClient();
