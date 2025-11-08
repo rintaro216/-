@@ -95,7 +95,7 @@ export default function AreaSelect() {
                 <span className="font-bold">スタジオ数：</span>1部屋
               </p>
               <p className="text-gray-700 mb-2">
-                <span className="font-bold">設備：</span>ドラム×2、ギター・ベース×1
+                <span className="font-bold">設備：</span>ドラム×1、ギター・ベース対応
               </p>
               <p className="text-gray-700">
                 <span className="font-bold">料金：</span>個人700円・バンド1800円/60分
