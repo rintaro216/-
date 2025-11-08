@@ -433,18 +433,18 @@ export default function ReservationManagement() {
             <h2 className="text-lg font-bold">
               予約一覧（{filteredReservations.length}件）
             </h2>
-            <div className="flex gap-2">
+            <div className="flex flex-col md:flex-row gap-2">
               <button
                 onClick={handleExportCSV}
                 disabled={filteredReservations.length === 0}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FaFileExport className="mr-2" />
                 CSVエクスポート
               </button>
               <button
                 onClick={handleOpenCreateModal}
-                className="px-4 py-2 bg-primary-orange text-white rounded-lg hover:bg-orange-600 transition flex items-center"
+                className="px-4 py-2 bg-primary-orange text-white rounded-lg hover:bg-orange-600 transition flex items-center justify-center"
               >
                 <FaPlus className="mr-2" />
                 新規予約作成
@@ -522,7 +522,7 @@ export default function ReservationManagement() {
 
                     {/* アクション */}
                     {reservation.status === 'confirmed' && (
-                      <div className="ml-4 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex flex-col md:flex-row gap-2 md:ml-4 mt-4 md:mt-0" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => handleEditReservation(reservation)}
                           className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition flex items-center"
