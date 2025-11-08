@@ -161,6 +161,13 @@ export default function DateSelect() {
     return isSameDay(date, today);
   };
 
+  // みどり楽器の場合、土日のみ予約可能（0=日曜, 6=土曜）
+  const isWeekdayForMidori = (date) => {
+    if (area !== 'midori') return false;
+    const dayOfWeek = getDay(date);
+    return dayOfWeek !== 0 && dayOfWeek !== 6; // 土日以外は平日
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
       <button
@@ -230,15 +237,16 @@ export default function DateSelect() {
             const isSelected = isSameDay(day, selectedDate);
             const isCurrentDay = isToday(day);
             const isTodayDisabled = isTodayDate(day); // 当日は選択不可
+            const isWeekdayMidori = isWeekdayForMidori(day); // みどり楽器で平日は不可
 
             return (
               <button
                 key={day.toString()}
-                onClick={() => !isPast && !isTodayDisabled && setSelectedDate(day)}
-                disabled={isPast || isTodayDisabled}
+                onClick={() => !isPast && !isTodayDisabled && !isWeekdayMidori && setSelectedDate(day)}
+                disabled={isPast || isTodayDisabled || isWeekdayMidori}
                 className={`
                   p-2 md:p-3 rounded-lg text-center transition text-sm md:text-base
-                  ${isPast || isTodayDisabled
+                  ${isPast || isTodayDisabled || isWeekdayMidori
                     ? 'text-gray-300 cursor-not-allowed'
                     : isSelected
                     ? 'bg-status-selected text-white font-bold shadow-lg scale-105'
@@ -247,7 +255,13 @@ export default function DateSelect() {
                     : 'hover:bg-gray-100'
                   }
                 `}
-                title={isTodayDisabled ? '当日予約はお電話でお願いします' : ''}
+                title={
+                  isTodayDisabled
+                    ? '当日予約はお電話でお願いします'
+                    : isWeekdayMidori
+                    ? 'みどり楽器は土日のみご利用可能です'
+                    : ''
+                }
               >
                 {format(day, 'd')}
               </button>
