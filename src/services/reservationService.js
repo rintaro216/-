@@ -109,15 +109,22 @@ export const checkAvailability = async (area, date, timeRange) => {
 
     if (weeklyError) throw weeklyError;
 
+    // そのエリアのスタジオIDリスト
+    const studioIds = studios?.map(s => s.id) || [];
+
     // ブロックされているスタジオIDを統合（重複排除）
     const blockedStudioIds = new Set([
       ...(blockedSlots?.map(b => b.studio_id) || []),
       ...(weeklyBlocked?.map(b => b.studio_id) || [])
     ]);
 
+    // そのエリアのスタジオのブロックだけをカウント
+    const blockedInThisArea = Array.from(blockedStudioIds).filter(id => studioIds.includes(id));
+
     const total = studios?.length || 0;
     const occupied = reservations?.length || 0;
     const blocked = blockedStudioIds.size;
+    const blocked = blockedInThisArea.length;
     const available = total - occupied - blocked;
 
     let status = 'available';

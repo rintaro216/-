@@ -69,13 +69,20 @@ export default function StudioSelect() {
         .eq('area', area)
         .eq('is_active', false);
 
+      // そのエリアのスタジオIDリスト
+      const areaStudioIds = areaData?.studios.map(s => s.id) || [];
+
       // ブロックされているスタジオIDを統合（重複排除）
       const blockedSet = new Set([
         ...(blocked?.map(b => b.studio_id) || []),
         ...(weeklyBlocked?.map(b => b.studio_id) || [])
       ]);
 
+      // そのエリアのスタジオのブロックだけを設定
+      const blockedInThisArea = Array.from(blockedSet).filter(id => areaStudioIds.includes(id));
+
       setBlockedStudioIds(Array.from(blockedSet));
+      setBlockedStudioIds(blockedInThisArea);
       setReservedStudioIds(reserved?.map(r => r.studio_id) || []);
       setInactiveStudioIds(inactive?.map(i => i.id) || []);
     } catch (error) {
