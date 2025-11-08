@@ -268,25 +268,27 @@ export default function BusinessHoursManagement({ embedded = false }) {
           <div className="flex space-x-1">
             <button
               onClick={() => setActiveTab('base')}
-              className={`px-6 py-3 font-bold transition border-b-4 ${
+              className={`px-3 md:px-6 py-3 font-bold transition border-b-4 text-sm md:text-base ${
                 activeTab === 'base'
                   ? 'border-primary-green text-primary-green bg-green-50'
                   : 'border-transparent text-gray-600 hover:text-gray-900'
               }`}
             >
-              <FaClock className="inline mr-2" />
-              基本設定（曜日ベース）
+              <FaClock className="inline mr-1 md:mr-2" />
+              <span className="hidden md:inline">基本設定（曜日ベース）</span>
+              <span className="md:hidden">基本設定</span>
             </button>
             <button
               onClick={() => setActiveTab('calendar')}
-              className={`px-6 py-3 font-bold transition border-b-4 ${
+              className={`px-3 md:px-6 py-3 font-bold transition border-b-4 text-sm md:text-base ${
                 activeTab === 'calendar'
                   ? 'border-primary-green text-primary-green bg-green-50'
                   : 'border-transparent text-gray-600 hover:text-gray-900'
               }`}
             >
-              <FaCalendar className="inline mr-2" />
-              カレンダー（日付ごと設定）
+              <FaCalendar className="inline mr-1 md:mr-2" />
+              <span className="hidden md:inline">カレンダー（日付ごと設定）</span>
+              <span className="md:hidden">カレンダー</span>
             </button>
           </div>
         </div>
@@ -655,13 +657,13 @@ function BaseSettingsTab({ businessHours, weekDays, onUpdate }) {
 
                   return (
                     <div key={`${studio.id}-${day.value}`} className="border-2 border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="font-bold text-gray-700 text-lg">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
+                        <div className="font-bold text-gray-700 text-base md:text-lg">
                           {day.label}
                         </div>
 
                         {/* 一括操作ボタン */}
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <button
                             onClick={() => setAllAvailable(studio.id, day.value)}
                             className="px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition"
@@ -879,9 +881,9 @@ function CalendarTab({ currentMonth, setCurrentMonth, selectedDate, setSelectedD
   }
 
   return (
-    <div className="grid grid-cols-12 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
       {/* カレンダー部分 */}
-      <div className="col-span-4 bg-white rounded-xl shadow-md p-6">
+      <div className="col-span-1 lg:col-span-4 bg-white rounded-xl shadow-md p-6">
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
@@ -944,7 +946,7 @@ function CalendarTab({ currentMonth, setCurrentMonth, selectedDate, setSelectedD
       </div>
 
       {/* 詳細パネル */}
-      <div className="col-span-8 bg-white rounded-xl shadow-md p-6">
+      <div className="col-span-1 lg:col-span-8 bg-white rounded-xl shadow-md p-6">
         <h2 className="text-xl font-bold mb-6">
           {format(selectedDate, 'yyyy年M月d日(E)', { locale: ja })} の営業状況
         </h2>
@@ -961,16 +963,16 @@ function CalendarTab({ currentMonth, setCurrentMonth, selectedDate, setSelectedD
 
             return (
               <div key={studio.id} className="border-2 border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
                   <div className="flex items-center">
                     <span className="text-2xl mr-2">{studio.icon}</span>
-                    <span className="font-bold text-lg">
+                    <span className="font-bold text-base md:text-lg">
                       {getAreaName(studio.area)} - {studio.display_name}
                     </span>
                   </div>
 
                   {/* 一括操作ボタン */}
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => setAllAvailableForDate(studio.id)}
                       className="px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition"

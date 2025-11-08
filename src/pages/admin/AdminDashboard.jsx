@@ -106,7 +106,7 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-gray-100">
       {/* ヘッダー */}
       <header className="bg-white shadow-md">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-800">
               おんぷタイム 管理画面
@@ -115,7 +115,7 @@ export default function AdminDashboard() {
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+            className="flex items-center justify-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition w-full md:w-auto"
           >
             <FaSignOutAlt />
             <span>ログアウト</span>
