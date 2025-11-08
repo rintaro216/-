@@ -84,7 +84,7 @@ export default function ReservationComplete() {
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">エリア</span>
-            <span className="font-bold">{areaData?.area}</span>
+            <span className="font-bold">{areaData?.areaDisplayName || areaData?.area}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">スタジオ</span>

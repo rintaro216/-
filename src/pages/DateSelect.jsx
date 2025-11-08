@@ -262,7 +262,7 @@ export default function DateSelect() {
           🕐 利用時間（{format(selectedDate, 'M月d日（E）', { locale: ja })}）
         </h2>
         <p className="text-sm text-gray-600 mb-4">
-          連続する時間帯を複数選択できます（30分単位）
+          連続する時間帯を複数選択できます
         </p>
 
         {/* 選択中の時間帯表示 */}
@@ -272,7 +272,7 @@ export default function DateSelect() {
               <div>
                 <p className="font-bold text-gray-800">選択中: {getTimeRange()}</p>
                 <p className="text-sm text-gray-600">
-                  {selectedTimeSlots.length}コマ（{selectedTimeSlots.length * 30}分）
+                  {selectedTimeSlots.length}コマ（{selectedTimeSlots.length * (area === 'midori' ? 60 : 30)}分）
                 </p>
               </div>
               {!areTimeSlotsContinuous() && (

@@ -88,7 +88,7 @@ export const checkAvailability = async (area, date, timeRange) => {
 
     if (studioError) throw studioError;
 
-    // ブロックされているスタジオIDを取得
+    // 特定日のブロックされているスタジオIDを取得
     const { data: blockedSlots, error: blockedError } = await supabase
       .from('blocked_slots')
       .select('studio_id')
@@ -98,9 +98,26 @@ export const checkAvailability = async (area, date, timeRange) => {
 
     if (blockedError) throw blockedError;
 
+    // 曜日別ブロックもチェック（weekly_blocked_slots）
+    const dayOfWeek = new Date(date).getDay(); // 0=日曜, 1=月曜, ..., 6=土曜
+    const { data: weeklyBlocked, error: weeklyError } = await supabase
+      .from('weekly_blocked_slots')
+      .select('studio_id')
+      .eq('day_of_week', dayOfWeek)
+      .lte('start_time', startTime + ':00')
+      .gt('end_time', startTime + ':00');
+
+    if (weeklyError) throw weeklyError;
+
+    // ブロックされているスタジオIDを統合（重複排除）
+    const blockedStudioIds = new Set([
+      ...(blockedSlots?.map(b => b.studio_id) || []),
+      ...(weeklyBlocked?.map(b => b.studio_id) || [])
+    ]);
+
     const total = studios?.length || 0;
     const occupied = reservations?.length || 0;
-    const blocked = blockedSlots?.length || 0;
+    const blocked = blockedStudioIds.size;
     const available = total - occupied - blocked;
 
     let status = 'available';
@@ -120,33 +137,53 @@ export const checkAvailability = async (area, date, timeRange) => {
 };
 
 /**
- * 特定日時の各時間帯の空室状況を一括取得（30分単位）
+ * 特定日時の各時間帯の空室状況を一括取得
+ * おんぷ館: 30分単位、みどり楽器: 60分単位
  */
 export const getAvailabilityByDate = async (area, date) => {
-  const timeSlots = [
-    '10:00-10:30',
-    '10:30-11:00',
-    '11:00-11:30',
-    '11:30-12:00',
-    '13:00-13:30',
-    '13:30-14:00',
-    '14:00-14:30',
-    '14:30-15:00',
-    '15:00-15:30',
-    '15:30-16:00',
-    '16:00-16:30',
-    '16:30-17:00',
-    '17:00-17:30',
-    '17:30-18:00',
-    '18:00-18:30',
-    '18:30-19:00',
-    '19:00-19:30',
-    '19:30-20:00',
-    '20:00-20:30',
-    '20:30-21:00',
-    '21:00-21:30',
-    '21:30-22:00',
-  ];
+  // エリアに応じて時間枠を設定
+  let timeSlots;
+
+  if (area === 'midori') {
+    // みどり楽器: 1時間単位（土日のみ 10:00-19:00）
+    timeSlots = [
+      '10:00-11:00',
+      '11:00-12:00',
+      '12:00-13:00',
+      '13:00-14:00',
+      '14:00-15:00',
+      '15:00-16:00',
+      '16:00-17:00',
+      '17:00-18:00',
+      '18:00-19:00',
+    ];
+  } else {
+    // おんぷ館: 30分単位
+    timeSlots = [
+      '10:00-10:30',
+      '10:30-11:00',
+      '11:00-11:30',
+      '11:30-12:00',
+      '13:00-13:30',
+      '13:30-14:00',
+      '14:00-14:30',
+      '14:30-15:00',
+      '15:00-15:30',
+      '15:30-16:00',
+      '16:00-16:30',
+      '16:30-17:00',
+      '17:00-17:30',
+      '17:30-18:00',
+      '18:00-18:30',
+      '18:30-19:00',
+      '19:00-19:30',
+      '19:30-20:00',
+      '20:00-20:30',
+      '20:30-21:00',
+      '21:00-21:30',
+      '21:30-22:00',
+    ];
+  }
 
   if (!isSupabaseConfigured()) {
     // ダミーデータ

@@ -37,11 +37,20 @@ export default function StudioSelect() {
     try {
       const [startTime] = time.split('-');
 
-      // ブロックされたスタジオを取得
+      // 特定日のブロックされたスタジオを取得
       const { data: blocked } = await supabase
         .from('blocked_slots')
         .select('studio_id')
         .eq('blocked_date', date)
+        .lte('start_time', startTime + ':00')
+        .gt('end_time', startTime + ':00');
+
+      // 曜日別ブロック（weekly_blocked_slots）をチェック
+      const dayOfWeek = new Date(date).getDay(); // 0=日曜, 1=月曜, ..., 6=土曜
+      const { data: weeklyBlocked } = await supabase
+        .from('weekly_blocked_slots')
+        .select('studio_id')
+        .eq('day_of_week', dayOfWeek)
         .lte('start_time', startTime + ':00')
         .gt('end_time', startTime + ':00');
 
@@ -60,7 +69,13 @@ export default function StudioSelect() {
         .eq('area', area)
         .eq('is_active', false);
 
-      setBlockedStudioIds(blocked?.map(b => b.studio_id) || []);
+      // ブロックされているスタジオIDを統合（重複排除）
+      const blockedSet = new Set([
+        ...(blocked?.map(b => b.studio_id) || []),
+        ...(weeklyBlocked?.map(b => b.studio_id) || [])
+      ]);
+
+      setBlockedStudioIds(Array.from(blockedSet));
       setReservedStudioIds(reserved?.map(r => r.studio_id) || []);
       setInactiveStudioIds(inactive?.map(i => i.id) || []);
     } catch (error) {
@@ -94,7 +109,7 @@ export default function StudioSelect() {
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
         <p className="text-gray-700">
-          <span className="font-bold">{areaData.area}</span> ／
+          <span className="font-bold">{areaData.areaDisplayName || areaData.area}</span> ／
           <span className="ml-2">{date && format(new Date(date), 'M月d日（E）', { locale: ja })}</span> ／
           <span className="ml-2">{time}</span>
         </p>

@@ -54,13 +54,13 @@ export default function AreaSelect() {
 
             <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
               <p className="text-gray-700 mb-2">
-                <span className="font-bold">スタジオ数：</span>A〜G室（7部屋）
+                <span className="font-bold">スタジオ数：</span>A〜C室（3部屋）
               </p>
               <p className="text-gray-700 mb-2">
                 <span className="font-bold">設備：</span>ピアノ・歌・弦楽器対応
               </p>
               <p className="text-gray-700">
-                <span className="font-bold">料金：</span>660円〜/時間
+                <span className="font-bold">料金：</span>550円〜/30分
               </p>
             </div>
 
@@ -92,13 +92,13 @@ export default function AreaSelect() {
 
             <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
               <p className="text-gray-700 mb-2">
-                <span className="font-bold">スタジオ数：</span>3部屋
+                <span className="font-bold">スタジオ数：</span>1部屋
               </p>
               <p className="text-gray-700 mb-2">
                 <span className="font-bold">設備：</span>ドラム×2、ギター・ベース×1
               </p>
               <p className="text-gray-700">
-                <span className="font-bold">料金：</span>660円〜/時間
+                <span className="font-bold">料金：</span>個人700円・バンド1800円/60分
               </p>
             </div>
 
