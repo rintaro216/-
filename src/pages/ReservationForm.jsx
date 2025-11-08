@@ -204,7 +204,7 @@ export default function ReservationForm() {
         <div className="border-t border-blue-200 pt-4 space-y-2 text-sm md:text-base">
           <div className="flex justify-between">
             <span className="text-gray-600">エリア</span>
-            <span className="font-bold">{areaData?.area}</span>
+            <span className="font-bold">{areaData?.areaDisplayName || areaData?.area}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">スタジオ</span>

@@ -45,13 +45,13 @@ export default function Home() {
                 <FaMusic className="text-5xl md:text-6xl text-primary-green mx-auto mb-4" />
                 <h3 className="text-xl md:text-2xl font-bold mb-2">おんぷ館エリア</h3>
                 <p className="text-gray-600 mb-4">
-                  A〜G室（7部屋）
+                  A〜C室（3部屋）
                 </p>
                 <p className="text-sm text-gray-500 mb-6">
                   ピアノ・歌・弦楽器対応
                 </p>
                 <div className="text-primary-orange font-bold mb-4">
-                  660円〜/時間
+                  550円〜/30分
                 </div>
                 <button className="btn-primary w-full">
                   予約する
@@ -74,13 +74,14 @@ export default function Home() {
                 <FaDrum className="text-5xl md:text-6xl text-primary-orange mx-auto mb-4" />
                 <h3 className="text-xl md:text-2xl font-bold mb-2">みどり楽器エリア</h3>
                 <p className="text-gray-600 mb-4">
-                  ドラム×2、ギター・ベース×1
+                  1部屋
                 </p>
                 <p className="text-sm text-gray-500 mb-6">
-                  本格的バンド練習に最適
+                  ドラム・ギター・バンド練習対応<br/>
+                  土日のみ営業（10:00-19:00）
                 </p>
                 <div className="text-primary-orange font-bold mb-4">
-                  660円〜/時間
+                  個人700円・バンド1800円/60分
                 </div>
                 <button className="btn-primary w-full">
                   予約する

@@ -13,7 +13,7 @@ export default function Header() {
 
           <nav className="flex space-x-3 md:space-x-6">
             <Link
-              to="/"
+              to="/announcements"
               className="flex items-center space-x-1 hover:text-yellow-200 transition text-sm md:text-base"
             >
               <FaBell className="text-lg" />

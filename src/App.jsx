@@ -10,6 +10,8 @@ import UserTypeSelect from './pages/UserTypeSelect'
 import ReservationForm from './pages/ReservationForm'
 import ReservationComplete from './pages/ReservationComplete'
 import ReservationCheck from './pages/user/ReservationCheck'
+import AnnouncementList from './pages/AnnouncementList'
+import AnnouncementDetail from './pages/AnnouncementDetail'
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import ReservationManagement from './pages/admin/ReservationManagement'
@@ -40,6 +42,10 @@ function App() {
 
           {/* 予約確認・キャンセル */}
           <Route path="/reservation/check" element={<ReservationCheck />} />
+
+          {/* お知らせ */}
+          <Route path="/announcements" element={<AnnouncementList />} />
+          <Route path="/announcements/:id" element={<AnnouncementDetail />} />
 
           {/* 管理画面 */}
           <Route path="/admin/login" element={<AdminLogin />} />

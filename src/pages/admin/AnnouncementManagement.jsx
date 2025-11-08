@@ -7,16 +7,26 @@ import { FaPlus, FaEdit, FaTrash, FaEye, FaEyeSlash, FaArrowLeft } from 'react-i
 import ImageUpload from '../../components/ImageUpload';
 import { sendAnnouncementToGroup } from '../../services/lineNotificationService';
 
+const CATEGORIES = {
+  general: { label: '一般', color: 'bg-blue-500', icon: '📰' },
+  important: { label: '重要', color: 'bg-red-500', icon: '🚨' },
+  maintenance: { label: 'メンテナンス', color: 'bg-yellow-500', icon: '🔧' },
+  event: { label: 'イベント', color: 'bg-green-500', icon: '🎉' }
+};
+
 export default function AnnouncementManagement() {
   const navigate = useNavigate();
   const [announcements, setAnnouncements] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    priority: 'normal',
+    category: 'general',
+    is_pinned: false,
+    status: 'published',
     is_published: false,
     publish_start_date: '',
     publish_end_date: '',
@@ -54,7 +64,9 @@ export default function AnnouncementManagement() {
       setFormData({
         title: announcement.title,
         content: announcement.content,
-        priority: announcement.priority,
+        category: announcement.category || 'general',
+        is_pinned: announcement.is_pinned || false,
+        status: announcement.status || 'published',
         is_published: announcement.is_published,
         publish_start_date: announcement.publish_start_date || '',
         publish_end_date: announcement.publish_end_date || '',
@@ -66,7 +78,9 @@ export default function AnnouncementManagement() {
       setFormData({
         title: '',
         content: '',
-        priority: 'normal',
+        category: 'general',
+        is_pinned: false,
+        status: 'published',
         is_published: false,
         publish_start_date: '',
         publish_end_date: '',
@@ -84,7 +98,9 @@ export default function AnnouncementManagement() {
     setFormData({
       title: '',
       content: '',
-      priority: 'normal',
+      category: 'general',
+      is_pinned: false,
+      status: 'published',
       is_published: false,
       publish_start_date: '',
       publish_end_date: '',
@@ -92,6 +108,14 @@ export default function AnnouncementManagement() {
       image_url: ''
     });
     setErrors({});
+  };
+
+  const handlePreview = () => {
+    setShowPreview(true);
+  };
+
+  const handleClosePreview = () => {
+    setShowPreview(false);
   };
 
   const validate = () => {
@@ -115,6 +139,50 @@ export default function AnnouncementManagement() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleSaveDraft = async (e) => {
+    e.preventDefault();
+
+    if (!validate()) return;
+
+    try {
+      const dataToSave = {
+        title: formData.title.trim(),
+        content: formData.content.trim(),
+        category: formData.category,
+        is_pinned: formData.is_pinned,
+        status: 'draft',
+        is_published: false,
+        publish_start_date: formData.publish_start_date || null,
+        publish_end_date: formData.publish_end_date || null,
+        display_order: parseInt(formData.display_order) || 0,
+        image_url: formData.image_url.trim() || null
+      };
+
+      if (editingAnnouncement) {
+        const { error } = await supabase
+          .from('announcements')
+          .update(dataToSave)
+          .eq('id', editingAnnouncement.id);
+
+        if (error) throw error;
+        alert('下書きを保存しました');
+      } else {
+        const { error } = await supabase
+          .from('announcements')
+          .insert([dataToSave]);
+
+        if (error) throw error;
+        alert('下書きを保存しました');
+      }
+
+      handleCloseModal();
+      fetchAnnouncements();
+    } catch (error) {
+      console.error('下書き保存エラー:', error);
+      alert('下書きの保存に失敗しました');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -124,7 +192,9 @@ export default function AnnouncementManagement() {
       const dataToSave = {
         title: formData.title.trim(),
         content: formData.content.trim(),
-        priority: formData.priority,
+        category: formData.category,
+        is_pinned: formData.is_pinned,
+        status: formData.status,
         is_published: formData.is_published,
         publish_start_date: formData.publish_start_date || null,
         publish_end_date: formData.publish_end_date || null,
@@ -271,15 +341,30 @@ export default function AnnouncementManagement() {
             >
               <div className="flex items-start justify-between">
                 <div className="flex-grow">
-                  <div className="flex items-center space-x-3 mb-2">
+                  <div className="flex items-center space-x-3 mb-2 flex-wrap gap-2">
                     <h2 className="text-xl font-bold text-gray-800">
                       {announcement.title}
                     </h2>
-                    {announcement.priority === 'important' && (
-                      <span className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded">
-                        重要
+                    {/* カテゴリバッジ */}
+                    <span className={`inline-flex items-center space-x-1 px-3 py-1 ${
+                      CATEGORIES[announcement.category]?.color || 'bg-blue-500'
+                    } text-white text-xs font-bold rounded-full`}>
+                      <span>{CATEGORIES[announcement.category]?.icon || '📰'}</span>
+                      <span>{CATEGORIES[announcement.category]?.label || '一般'}</span>
+                    </span>
+                    {/* ピン留めバッジ */}
+                    {announcement.is_pinned && (
+                      <span className="px-3 py-1 bg-yellow-500 text-white text-xs font-bold rounded-full">
+                        📌 ピン留め
                       </span>
                     )}
+                    {/* 下書きバッジ */}
+                    {announcement.status === 'draft' && (
+                      <span className="px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">
+                        📝 下書き
+                      </span>
+                    )}
+                    {/* 公開状態バッジ */}
                     {announcement.is_published ? (
                       <span className="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded">
                         公開中
@@ -393,18 +478,34 @@ export default function AnnouncementManagement() {
                   )}
                 </div>
 
-                {/* 優先度 */}
+                {/* カテゴリ */}
                 <div>
-                  <label className="block text-sm font-bold mb-2">優先度</label>
+                  <label className="block text-sm font-bold mb-2">カテゴリ</label>
                   <select
-                    name="priority"
-                    value={formData.priority}
+                    name="category"
+                    value={formData.category}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-primary-orange transition"
                   >
-                    <option value="normal">通常</option>
-                    <option value="important">重要</option>
+                    <option value="general">📰 一般</option>
+                    <option value="important">🚨 重要</option>
+                    <option value="maintenance">🔧 メンテナンス</option>
+                    <option value="event">🎉 イベント</option>
                   </select>
+                </div>
+
+                {/* ピン留め */}
+                <div>
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="is_pinned"
+                      checked={formData.is_pinned}
+                      onChange={handleChange}
+                      className="w-5 h-5"
+                    />
+                    <span className="text-sm font-bold">📌 ピン留めする（一覧の上部に表示）</span>
+                  </label>
                 </div>
 
                 {/* 公開設定 */}
@@ -481,22 +582,124 @@ export default function AnnouncementManagement() {
                 </div>
 
                 {/* ボタン */}
-                <div className="flex space-x-4">
-                  <button
-                    type="submit"
-                    className="flex-1 btn-primary py-3"
-                  >
-                    {editingAnnouncement ? '更新する' : '作成する'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-bold hover:bg-gray-400 transition"
-                  >
-                    キャンセル
-                  </button>
+                <div className="flex justify-between items-center">
+                  {/* 左側: 下書き保存・プレビューボタン */}
+                  <div className="flex space-x-3">
+                    <button
+                      type="button"
+                      onClick={handleSaveDraft}
+                      className="px-6 py-3 bg-gray-500 text-white font-bold rounded-lg hover:bg-gray-600 transition"
+                    >
+                      📝 下書き保存
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handlePreview}
+                      className="px-6 py-3 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition"
+                    >
+                      👁️ プレビュー
+                    </button>
+                  </div>
+
+                  {/* 右側: キャンセル・作成ボタン */}
+                  <div className="flex space-x-4">
+                    <button
+                      type="button"
+                      onClick={handleCloseModal}
+                      className="px-6 py-3 bg-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-400 transition"
+                    >
+                      キャンセル
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 py-3 btn-primary"
+                    >
+                      {editingAnnouncement ? '更新する' : '作成する'}
+                    </button>
+                  </div>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* プレビューモーダル */}
+      {showPreview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg w-full max-w-4xl my-8">
+            <div className="p-6 max-h-[80vh] overflow-y-auto">
+              {/* ヘッダー */}
+              <div className="flex items-center justify-between mb-6 pb-4 border-b">
+                <h2 className="text-2xl font-bold text-gray-800">プレビュー</h2>
+                <button
+                  onClick={handleClosePreview}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* プレビュー内容 */}
+              <article className="card">
+                {/* カテゴリバッジ */}
+                <div className="mb-4">
+                  <span className={`inline-flex items-center space-x-2 px-4 py-2 ${
+                    CATEGORIES[formData.category]?.color || 'bg-blue-500'
+                  } text-white text-sm font-bold rounded-full`}>
+                    <span className="text-lg">
+                      {CATEGORIES[formData.category]?.icon || '📰'}
+                    </span>
+                    <span>
+                      {CATEGORIES[formData.category]?.label || '一般'}
+                    </span>
+                  </span>
+                </div>
+
+                {/* タイトル */}
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-6">
+                  {formData.title || '（タイトル未入力）'}
+                </h1>
+
+                {/* 日付 */}
+                <div className="flex items-center text-gray-500 text-sm mb-8">
+                  <span>作成日: {new Date().toLocaleDateString('ja-JP')}</span>
+                  {formData.publish_end_date && (
+                    <div className="ml-4 text-xs bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full">
+                      {formData.publish_end_date}まで掲載
+                    </div>
+                  )}
+                </div>
+
+                {/* 画像 */}
+                {formData.image_url && (
+                  <div className="mb-8">
+                    <img
+                      src={formData.image_url}
+                      alt={formData.title}
+                      className="w-full rounded-lg shadow-lg"
+                    />
+                  </div>
+                )}
+
+                {/* 本文 */}
+                <div className="prose prose-lg max-w-none">
+                  <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap">
+                    {formData.content || '（本文未入力）'}
+                  </p>
+                </div>
+              </article>
+
+              {/* 閉じるボタン */}
+              <div className="mt-6 text-center">
+                <button
+                  onClick={handleClosePreview}
+                  className="px-8 py-3 bg-gray-500 text-white font-bold rounded-lg hover:bg-gray-600 transition"
+                >
+                  閉じる
+                </button>
+              </div>
             </div>
           </div>
         </div>
