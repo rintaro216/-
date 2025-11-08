@@ -123,7 +123,6 @@ export const checkAvailability = async (area, date, timeRange) => {
 
     const total = studios?.length || 0;
     const occupied = reservations?.length || 0;
-    const blocked = blockedStudioIds.size;
     const blocked = blockedInThisArea.length;
     const available = total - occupied - blocked;
 
