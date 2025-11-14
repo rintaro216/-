@@ -38,7 +38,7 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.1 }}
           >
             <Link
-              to="/reserve/area?area=onpukan"
+              to="/reserve/date?area=onpukan"
               className="card hover:scale-105 transform transition block"
             >
               <div className="text-center">
@@ -51,7 +51,7 @@ export default function Home() {
                   ピアノ・歌・弦楽器対応
                 </p>
                 <div className="text-primary-orange font-bold mb-4">
-                  550円〜/30分
+                  330円〜/30分
                 </div>
                 <button className="btn-primary w-full">
                   予約する
@@ -67,7 +67,7 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.3 }}
           >
             <Link
-              to="/reserve/area?area=midori"
+              to="/reserve/date?area=midori"
               className="card hover:scale-105 transform transition block"
             >
               <div className="text-center">

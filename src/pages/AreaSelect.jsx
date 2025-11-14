@@ -38,7 +38,7 @@ export default function AreaSelect() {
       </motion.div>
 
       <div className="grid md:grid-cols-2 gap-6">
-        {/* おんぷ館エリア */}
+        {/* おんぷ館スタジオ */}
         <motion.div
           onClick={() => handleAreaSelect('onpukan')}
           className="card cursor-pointer hover:scale-105 transform transition border-2 border-transparent hover:border-primary-green"
@@ -50,7 +50,7 @@ export default function AreaSelect() {
         >
           <div className="text-center">
             <FaMusic className="text-6xl md:text-7xl text-primary-green mx-auto mb-6" />
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">おんぷ館エリア</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">おんぷ館スタジオ</h2>
 
             <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
               <p className="text-gray-700 mb-2">
@@ -60,7 +60,7 @@ export default function AreaSelect() {
                 <span className="font-bold">設備：</span>ピアノ・歌・弦楽器対応
               </p>
               <p className="text-gray-700">
-                <span className="font-bold">料金：</span>550円〜/30分
+                <span className="font-bold">料金：</span>330円〜/30分
               </p>
             </div>
 
@@ -76,7 +76,7 @@ export default function AreaSelect() {
           </div>
         </motion.div>
 
-        {/* みどり楽器エリア */}
+        {/* みどり楽器スタジオ */}
         <motion.div
           onClick={() => handleAreaSelect('midori')}
           className="card cursor-pointer hover:scale-105 transform transition border-2 border-transparent hover:border-primary-orange"
@@ -88,7 +88,7 @@ export default function AreaSelect() {
         >
           <div className="text-center">
             <FaDrum className="text-6xl md:text-7xl text-primary-orange mx-auto mb-6" />
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">みどり楽器エリア</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">みどり楽器スタジオ</h2>
 
             <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
               <p className="text-gray-700 mb-2">
